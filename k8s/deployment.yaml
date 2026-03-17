@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: proyecto
+  namespace: grupo22
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: proyecto
+  template:
+    metadata:
+      labels:
+        app: proyecto
+    spec:
+      imagePullSecrets:
+      - name: ghcr-secret
+      containers:
+      - name: proyecto
+        image: ghcr.io/julianasolanx/Proyecto-Desarrollo-Web:latest
+        ports:
+        - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: proyecto
+  namespace: grupo22
+spec:
+  selector:
+    app: proyecto
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+   name: proyecto
+   namespace: grupo22
+spec:
+   ingressClassName: public
+   rules:
+   - host: grupo22.inphotech.co
+     http:
+       paths:
+       - path: /
+         pathType: Prefix
+         backend:
+           service:
+             name: proyecto
+             port:
+               number: 8080
