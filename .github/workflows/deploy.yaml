@@ -31,13 +31,13 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Build Docker image
-      run: docker build -t ghcr.io/${OWNER_LC}/<nombredelrepo>:latest .
+      run: docker build -t ghcr.io/${OWNER_LC}/proyecto-desarrollo-web:latest .
 
     - name: Push Docker image
-      run: docker push ghcr.io/${OWNER_LC}/<nombredelrepo>:latest
+      run: docker push ghcr.io/${OWNER_LC}/proyecto-desarrollo-web:latest
 
     - name: Print pushed image URL
-      run: 'echo "Imagen publicada: ghcr.io/${OWNER_LC}/<nombredelrepo>:latest"'
+      run: 'echo "Imagen publicada: ghcr.io/${OWNER_LC}/proyecto-desarrollo-web:latest"'
 
   deploy-onpremise:
     name: Deploy on MicroK8s On-Premise
@@ -50,4 +50,4 @@ jobs:
     - name: Apply Kubernetes deployment
       run: sudo microk8s kubectl apply -f k8s/deployment.yaml
     - name: Restart Kubernetes deployment
-      run: sudo microk8s kubectl rollout restart deployment/<nombredeplyment> -n <nombrenamespace>
+      run: sudo microk8s kubectl rollout restart deployment/proyecto -n grupo22

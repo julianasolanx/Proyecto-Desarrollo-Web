@@ -17,7 +17,7 @@ spec:
       - name: ghcr-secret
       containers:
       - name: proyecto
-        image: ghcr.io/julianasolanx/Proyecto-Desarrollo-Web:latest
+        image: ghcr.io/julianasolanx/proyecto-desarrollo-web:latest
         ports:
         - containerPort: 8080
 ---
