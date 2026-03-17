@@ -23,8 +23,8 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Where(clause = "status = 0")
-@SQLDelete(sql = "UPDATE application SET status = 1 WHERE id=?")
+@Where(clause = "status = 'ACTIVO'")
+@SQLDelete(sql = "UPDATE proceso SET status = 'INACTIVO' WHERE id=?")
 public class Proceso {
 
     @Id

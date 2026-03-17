@@ -8,4 +8,5 @@ public class EmpresaDTO {
     private String nombre;
     private String nit;
     private String correoContacto;
+    private String status;
 }

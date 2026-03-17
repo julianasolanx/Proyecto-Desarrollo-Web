@@ -1,62 +1,61 @@
 package com.proyecto.proyectoweb.service;
 
-import com.proyecto.proyectoweb.dto.EmpresaDTO;
-import com.proyecto.proyectoweb.entity.Empresa;
-import com.proyecto.proyectoweb.repository.EmpresaRepository;
-import jakarta.persistence.EntityNotFoundException;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.modelmapper.ModelMapper;
-import org.modelmapper.TypeToken;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.lang.reflect.Type;
-import java.util.List;
+
+import com.proyecto.proyectoweb.dto.EmpresaDTO;
+import com.proyecto.proyectoweb.entity.Empresa;
+import com.proyecto.proyectoweb.entity.Usuario;
+import com.proyecto.proyectoweb.repository.EmpresaRepository;
+import com.proyecto.proyectoweb.repository.UsuarioRepository;
 
 @Service
 public class EmpresaService {
 
-    private final EmpresaRepository empresaRepository;
-    private final ModelMapper modelMapper;
+    @Autowired
+    private EmpresaRepository empresaRepository;
 
-    public EmpresaService(EmpresaRepository empresaRepository, ModelMapper modelMapper) {
-        this.empresaRepository = empresaRepository;
-        this.modelMapper = modelMapper;
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private ModelMapper modelMapper;
+
+  
+    @Transactional
+    public EmpresaDTO registrarEmpresa(EmpresaDTO empresaDTO) {
+
+        Empresa empresa = modelMapper.map(empresaDTO, Empresa.class);
+        empresa.setStatus("ACTIVO");
+        Empresa empresaGuardada = empresaRepository.save(empresa);
+
+        Usuario admin = new Usuario();
+        admin.setNombre("Admin " + empresaGuardada.getNombre());
+        admin.setCorreo(empresaGuardada.getCorreoContacto());
+        admin.setContrasena("123456"); 
+        admin.setRol(Usuario.RolUsuario.ADMINISTRADOR);
+        admin.setStatus("ACTIVO");
+        admin.setEmpresa(empresaGuardada);
+        
+        usuarioRepository.save(admin);
+
+        return modelMapper.map(empresaGuardada, EmpresaDTO.class);
     }
 
-    @Transactional(readOnly = true)
+    
     public List<EmpresaDTO> listarEmpresas() {
-        List<Empresa> empresas = empresaRepository.findAll();
-        Type listType = new TypeToken<List<EmpresaDTO>>() {}.getType();
-        return modelMapper.map(empresas, listType);
+        return empresaRepository.findAll().stream()
+                .map(e -> modelMapper.map(e, EmpresaDTO.class))
+                .collect(Collectors.toList());
     }
 
-    @Transactional(readOnly = true)
-    public EmpresaDTO obtenerEmpresa(Long id) {
-        Empresa empresa = empresaRepository.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("Empresa no encontrada"));
-        return modelMapper.map(empresa, EmpresaDTO.class);
-    }
-
-    @Transactional
-    public EmpresaDTO crearEmpresa(EmpresaDTO dto) {
-        Empresa empresa = modelMapper.map(dto, Empresa.class);
-        Empresa saved = empresaRepository.save(empresa);
-        return modelMapper.map(saved, EmpresaDTO.class);
-    }
-
-    @Transactional
-    public EmpresaDTO actualizarEmpresa(Long id, EmpresaDTO dto) {
-        Empresa existing = empresaRepository.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("Empresa no encontrada"));
-        modelMapper.map(dto, existing);
-        Empresa saved = empresaRepository.save(existing);
-        return modelMapper.map(saved, EmpresaDTO.class);
-    }
-
-    @Transactional
-    public void eliminarEmpresa(Long id) {
-        if (!empresaRepository.existsById(id)) {
-            throw new EntityNotFoundException("Empresa no encontrada");
-        }
-        empresaRepository.deleteById(id);
+    public EmpresaDTO obtenerPorId(Long id) {
+        Empresa empresa = empresaRepository.findById(id).orElse(null);
+        return (empresa != null) ? modelMapper.map(empresa, EmpresaDTO.class) : null;
     }
 }

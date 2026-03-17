@@ -1,43 +1,42 @@
 package com.proyecto.proyectoweb.controller;
 
+import com.proyecto.proyectoweb.dto.LoginDTO;
 import com.proyecto.proyectoweb.dto.UsuarioDTO;
 import com.proyecto.proyectoweb.service.UsuarioService;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
 
 @RestController
-@RequestMapping("/api/usuarios")
-@RequiredArgsConstructor
+@RequestMapping("/api/usuario")
+@CrossOrigin(origins = "*") 
 public class UsuarioController {
 
-    private final UsuarioService usuarioService;
+    @Autowired
+    private UsuarioService usuarioService;
 
-    @GetMapping("/empresa/{empresaId}")
-    public ResponseEntity<List<UsuarioDTO>> listar(@PathVariable Long empresaId) {
-        return ResponseEntity.ok(usuarioService.listarPorEmpresa(empresaId));
+  
+    @PostMapping("/registrar")
+    public ResponseEntity<UsuarioDTO> registrarUsuario(@RequestBody UsuarioDTO usuarioDTO) {
+        try {
+            UsuarioDTO creado = usuarioService.registrarUsuarioEnEmpresa(usuarioDTO);
+            return new ResponseEntity<>(creado, HttpStatus.CREATED);
+        } catch (Exception e) {
+            
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        }
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<UsuarioDTO> obtener(@PathVariable Long id) {
-        return ResponseEntity.ok(usuarioService.obtenerUsuario(id));
-    }
-
-    @PostMapping
-    public ResponseEntity<UsuarioDTO> crear(@RequestBody UsuarioDTO dto) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(usuarioService.crearUsuario(dto));
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<UsuarioDTO> actualizar(@PathVariable Long id, @RequestBody UsuarioDTO dto) {
-        return ResponseEntity.ok(usuarioService.actualizarUsuario(id, dto));
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
-        usuarioService.eliminarUsuario(id);
-        return ResponseEntity.noContent().build();
+    
+    @PostMapping("/login")
+    public ResponseEntity<UsuarioDTO> login(@RequestBody LoginDTO loginDTO) {
+        try {
+            UsuarioDTO usuarioAutenticado = usuarioService.login(loginDTO);
+            return new ResponseEntity<>(usuarioAutenticado, HttpStatus.OK);
+        } catch (Exception e) {
+            
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+        }
     }
 }

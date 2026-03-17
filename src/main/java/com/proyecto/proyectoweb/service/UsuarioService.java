@@ -1,65 +1,83 @@
 package com.proyecto.proyectoweb.service;
 
-import java.lang.reflect.Type;
-import java.util.List;
-
+import com.proyecto.proyectoweb.dto.LoginDTO;
+import com.proyecto.proyectoweb.dto.UsuarioDTO;
+import com.proyecto.proyectoweb.entity.Empresa;
+import com.proyecto.proyectoweb.entity.Usuario;
+import com.proyecto.proyectoweb.repository.EmpresaRepository;
+import com.proyecto.proyectoweb.repository.UsuarioRepository;
 import org.modelmapper.ModelMapper;
-import org.modelmapper.TypeToken;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.proyecto.proyectoweb.dto.UsuarioDTO;
-import com.proyecto.proyectoweb.entity.Usuario;
-import com.proyecto.proyectoweb.repository.UsuarioRepository;
-
-import jakarta.persistence.EntityNotFoundException;
+import java.util.Optional;
 
 @Service
 public class UsuarioService {
 
-    private final UsuarioRepository usuarioRepository;
-    private final ModelMapper modelMapper;
+    @Autowired
+    private UsuarioRepository usuarioRepository;
 
-    public UsuarioService(UsuarioRepository usuarioRepository, ModelMapper modelMapper) {
-        this.usuarioRepository = usuarioRepository;
-        this.modelMapper = modelMapper;
-    }
+    @Autowired
+    private EmpresaRepository empresaRepository;
 
-    @Transactional(readOnly = true)
-    public List<UsuarioDTO> listarPorEmpresa(Long empresaId) {
-        List<Usuario> usuarios = usuarioRepository.findByEmpresaId(empresaId);
-        Type listType = new TypeToken<List<UsuarioDTO>>() {}.getType();
-        return modelMapper.map(usuarios, listType);
-    }
+    @Autowired
+    private ModelMapper modelMapper;
 
-    @Transactional(readOnly = true)
-    public UsuarioDTO obtenerUsuario(Long id) {
-        Usuario usuario = usuarioRepository.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
-        return modelMapper.map(usuario, UsuarioDTO.class);
-    }
-
+   
     @Transactional
-    public UsuarioDTO crearUsuario(UsuarioDTO dto) {
-        Usuario usuario = modelMapper.map(dto, Usuario.class);
-        Usuario saved = usuarioRepository.save(usuario);
-        return modelMapper.map(saved, UsuarioDTO.class);
-    }
+    public UsuarioDTO registrarUsuarioEnEmpresa(UsuarioDTO usuarioDTO) {
 
-    @Transactional
-    public UsuarioDTO actualizarUsuario(Long id, UsuarioDTO dto) {
-        Usuario existing = usuarioRepository.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
-        modelMapper.map(dto, existing);
-        Usuario saved = usuarioRepository.save(existing);
-        return modelMapper.map(saved, UsuarioDTO.class);
-    }
+        Empresa empresa = empresaRepository.findById(usuarioDTO.getEmpresaId())
+                .orElseThrow(() -> new RuntimeException("Error: La empresa con ID " + usuarioDTO.getEmpresaId() + " no existe."));
 
-    @Transactional
-    public void eliminarUsuario(Long id) {
-        if (!usuarioRepository.existsById(id)) {
-            throw new EntityNotFoundException("Usuario no encontrado");
+        
+        Usuario nuevoUsuario = new Usuario();
+        nuevoUsuario.setNombre(usuarioDTO.getNombre());
+        nuevoUsuario.setCorreo(usuarioDTO.getCorreo());
+        nuevoUsuario.setContrasena(usuarioDTO.getContrasena()); 
+        nuevoUsuario.setStatus("ACTIVO");
+        nuevoUsuario.setEmpresa(empresa);
+
+        try {
+            if (usuarioDTO.getRol() != null) {
+                nuevoUsuario.setRol(Usuario.RolUsuario.valueOf(usuarioDTO.getRol().toUpperCase()));
+            } else {
+                nuevoUsuario.setRol(Usuario.RolUsuario.SOLO_LECTURA);
+            }
+        } catch (IllegalArgumentException e) {
+        
+            nuevoUsuario.setRol(Usuario.RolUsuario.SOLO_LECTURA);
         }
-        usuarioRepository.deleteById(id);
+
+        Usuario usuarioGuardado = usuarioRepository.save(nuevoUsuario);
+
+      
+        return modelMapper.map(usuarioGuardado, UsuarioDTO.class);
+    }
+
+   
+    public UsuarioDTO login(LoginDTO loginDTO) {
+       
+        Optional<Usuario> usuarioOpt = usuarioRepository.findByCorreo(loginDTO.getCorreo());
+
+        if (usuarioOpt.isPresent()) {
+            Usuario usuario = usuarioOpt.get();
+            
+            if (usuario.getContrasena().equals(loginDTO.getContrasena())) {
+                
+                UsuarioDTO dto = modelMapper.map(usuario, UsuarioDTO.class);
+            
+                if (usuario.getEmpresa() != null) {
+                    dto.setEmpresaId(usuario.getEmpresa().getId());
+                }
+                
+                return dto;
+            }
+        }
+        
+        
+        throw new RuntimeException("Credenciales inválidas: correo o contraseña incorrectos.");
     }
 }
