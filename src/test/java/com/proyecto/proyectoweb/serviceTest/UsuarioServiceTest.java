@@ -1,0 +1,144 @@
+package com.proyecto.proyectoweb.serviceTest;
+
+import com.proyecto.proyectoweb.dto.UsuarioDTO;
+import com.proyecto.proyectoweb.entity.Usuario;
+import com.proyecto.proyectoweb.repository.UsuarioRepository;
+import com.proyecto.proyectoweb.service.UsuarioService;
+
+import jakarta.persistence.EntityNotFoundException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.modelmapper.ModelMapper;
+import org.modelmapper.TypeToken;
+
+import java.lang.reflect.Type;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class UsuarioServiceTest {
+
+    @Mock
+    private UsuarioRepository usuarioRepository;
+
+    @Mock
+    private ModelMapper modelMapper;
+
+    @InjectMocks
+    private UsuarioService usuarioService;
+
+    private Usuario usuario;
+    private UsuarioDTO usuarioDTO;
+    private Long empresaId;
+    private Long usuarioId;
+
+    @BeforeEach
+    void setUp() {
+        empresaId = 1L;
+        usuarioId = 1L;
+        
+        usuario = new Usuario();
+        usuario.setId(usuarioId);
+        usuario.setNombre("Test Usuario");
+        usuario.setCorreo("test@mail.com");
+        
+        usuarioDTO = new UsuarioDTO();
+        usuarioDTO.setId(usuarioId);
+        usuarioDTO.setNombre("Test Usuario");
+        usuarioDTO.setCorreo("test@mail.com");
+    }
+
+    @Test
+    void listarPorEmpresa_Success() {
+        List<Usuario> usuarios = Arrays.asList(usuario);
+        List<UsuarioDTO> expectedDTOs = Arrays.asList(usuarioDTO);
+        Type listType = new TypeToken<List<UsuarioDTO>>() {}.getType();
+
+        when(usuarioRepository.findByEmpresaId(empresaId)).thenReturn(usuarios);
+        when(modelMapper.map(usuarios, listType)).thenReturn(expectedDTOs);
+
+        List<UsuarioDTO> result = usuarioService.listarPorEmpresa(empresaId);
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals(usuarioDTO.getNombre(), result.get(0).getNombre());
+    }
+
+    @Test
+    void obtenerUsuario_Success() {
+        when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.of(usuario));
+        when(modelMapper.map(usuario, UsuarioDTO.class)).thenReturn(usuarioDTO);
+
+        UsuarioDTO result = usuarioService.obtenerUsuario(usuarioId);
+
+        assertNotNull(result);
+        assertEquals(usuarioDTO.getNombre(), result.getNombre());
+    }
+
+    @Test
+    void obtenerUsuario_NotFound() {
+        when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.empty());
+
+        assertThrows(EntityNotFoundException.class, () -> 
+            usuarioService.obtenerUsuario(usuarioId));
+    }
+
+    @Test
+    void crearUsuario_Success() {
+        when(modelMapper.map(usuarioDTO, Usuario.class)).thenReturn(usuario);
+        when(usuarioRepository.save(usuario)).thenReturn(usuario);
+        when(modelMapper.map(usuario, UsuarioDTO.class)).thenReturn(usuarioDTO);
+
+        UsuarioDTO result = usuarioService.crearUsuario(usuarioDTO);
+
+        assertNotNull(result);
+        assertEquals(usuarioDTO.getNombre(), result.getNombre());
+    }
+
+    @Test
+    void actualizarUsuario_Success() {
+        UsuarioDTO updateDTO = new UsuarioDTO();
+        updateDTO.setNombre("Updated Usuario");
+
+        when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.of(usuario));
+        doAnswer(invocation -> {
+            UsuarioDTO source = invocation.getArgument(0);
+            Usuario destination = invocation.getArgument(1);
+            destination.setNombre(source.getNombre());
+            return null;
+        }).when(modelMapper).map(updateDTO, usuario);
+        when(usuarioRepository.save(usuario)).thenReturn(usuario);
+        when(modelMapper.map(usuario, UsuarioDTO.class)).thenReturn(usuarioDTO);
+
+        UsuarioDTO result = usuarioService.actualizarUsuario(usuarioId, updateDTO);
+
+        assertNotNull(result);
+        verify(usuarioRepository).findById(usuarioId);
+        verify(usuarioRepository).save(usuario);
+    }
+
+    @Test
+    void eliminarUsuario_Success() {
+        when(usuarioRepository.existsById(usuarioId)).thenReturn(true);
+        doNothing().when(usuarioRepository).deleteById(usuarioId);
+
+        assertDoesNotThrow(() -> usuarioService.eliminarUsuario(usuarioId));
+        verify(usuarioRepository).deleteById(usuarioId);
+    }
+
+    @Test
+    void eliminarUsuario_NotFound() {
+        when(usuarioRepository.existsById(usuarioId)).thenReturn(false);
+
+        assertThrows(EntityNotFoundException.class, () -> 
+            usuarioService.eliminarUsuario(usuarioId));
+    }
+}
