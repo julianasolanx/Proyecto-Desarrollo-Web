@@ -1,5 +1,4 @@
 package com.proyecto.proyectoweb.controller;
-
 import com.proyecto.proyectoweb.dto.ArcoDTO;
 import com.proyecto.proyectoweb.service.ArcoService;
 import lombok.RequiredArgsConstructor;
@@ -12,11 +11,15 @@ import java.util.List;
 @RequestMapping("/api/arcos")
 @RequiredArgsConstructor
 public class ArcoController {
-
     private final ArcoService arcoService;
 
+    @GetMapping
+    public ResponseEntity<List<ArcoDTO>> listar() {
+        return ResponseEntity.ok(arcoService.listarArcos());
+    }
+
     @GetMapping("/proceso/{procesoId}")
-    public ResponseEntity<List<ArcoDTO>> listar(@PathVariable Long procesoId) {
+    public ResponseEntity<List<ArcoDTO>> listarPorProceso(@PathVariable Long procesoId) {
         return ResponseEntity.ok(arcoService.listarPorProceso(procesoId));
     }
 

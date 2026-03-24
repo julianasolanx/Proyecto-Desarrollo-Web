@@ -1,5 +1,4 @@
 package com.proyecto.proyectoweb.service;
-
 import com.proyecto.proyectoweb.dto.ArcoDTO;
 import com.proyecto.proyectoweb.entity.Arco;
 import com.proyecto.proyectoweb.repository.ArcoRepository;
@@ -13,13 +12,19 @@ import java.util.List;
 
 @Service
 public class ArcoService {
-
     private final ArcoRepository arcoRepository;
     private final ModelMapper modelMapper;
 
     public ArcoService(ArcoRepository arcoRepository, ModelMapper modelMapper) {
         this.arcoRepository = arcoRepository;
         this.modelMapper = modelMapper;
+    }
+
+    @Transactional(readOnly = true)
+    public List<ArcoDTO> listarArcos() {
+        List<Arco> arcos = arcoRepository.findAll();
+        Type listType = new TypeToken<List<ArcoDTO>>() {}.getType();
+        return modelMapper.map(arcos, listType);
     }
 
     @Transactional(readOnly = true)
@@ -32,7 +37,7 @@ public class ArcoService {
     @Transactional(readOnly = true)
     public ArcoDTO obtenerArco(Long id) {
         Arco arco = arcoRepository.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("Arco no encontrado"));
+                .orElseThrow(() -> new EntityNotFoundException("Arco no encontrado"));
         return modelMapper.map(arco, ArcoDTO.class);
     }
 
@@ -46,7 +51,7 @@ public class ArcoService {
     @Transactional
     public ArcoDTO actualizarArco(Long id, ArcoDTO dto) {
         Arco existing = arcoRepository.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("Arco no encontrado"));
+                .orElseThrow(() -> new EntityNotFoundException("Arco no encontrado"));
         modelMapper.map(dto, existing);
         Arco saved = arcoRepository.save(existing);
         return modelMapper.map(saved, ArcoDTO.class);

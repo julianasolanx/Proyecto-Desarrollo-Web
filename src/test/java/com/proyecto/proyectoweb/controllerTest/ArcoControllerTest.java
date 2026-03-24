@@ -11,10 +11,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
-
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -36,7 +35,6 @@ class ArcoControllerTest {
     void setUp() {
         procesoId = 1L;
         arcoId = 1L;
-        
         arcoDTO = new ArcoDTO();
         arcoDTO.setId(arcoId);
         arcoDTO.setCondicion("Test Arco");
@@ -45,14 +43,53 @@ class ArcoControllerTest {
     @Test
     void listar_Success() {
         List<ArcoDTO> expectedList = Arrays.asList(arcoDTO);
-        when(arcoService.listarPorProceso(procesoId)).thenReturn(expectedList);
+        when(arcoService.listarArcos()).thenReturn(expectedList);
 
-        ResponseEntity<List<ArcoDTO>> response = arcoController.listar(procesoId);
+        ResponseEntity<List<ArcoDTO>> response = arcoController.listar();
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals(1, response.getBody().size());
         assertEquals(arcoDTO.getCondicion(), response.getBody().get(0).getCondicion());
+        verify(arcoService).listarArcos();
+    }
+
+    @Test
+    void listar_ListaVacia() {
+        when(arcoService.listarArcos()).thenReturn(Collections.emptyList());
+
+        ResponseEntity<List<ArcoDTO>> response = arcoController.listar();
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertTrue(response.getBody().isEmpty());
+        verify(arcoService).listarArcos();
+    }
+
+
+    @Test
+    void listarPorProceso_Success() {
+        List<ArcoDTO> expectedList = Arrays.asList(arcoDTO);
+        when(arcoService.listarPorProceso(procesoId)).thenReturn(expectedList);
+
+        ResponseEntity<List<ArcoDTO>> response = arcoController.listarPorProceso(procesoId);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(1, response.getBody().size());
+        assertEquals(arcoDTO.getCondicion(), response.getBody().get(0).getCondicion());
+        verify(arcoService).listarPorProceso(procesoId);
+    }
+
+    @Test
+    void listarPorProceso_ListaVacia() {
+        when(arcoService.listarPorProceso(procesoId)).thenReturn(Collections.emptyList());
+
+        ResponseEntity<List<ArcoDTO>> response = arcoController.listarPorProceso(procesoId);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertTrue(response.getBody().isEmpty());
         verify(arcoService).listarPorProceso(procesoId);
     }
 
@@ -79,6 +116,7 @@ class ArcoControllerTest {
         assertEquals(arcoDTO.getCondicion(), response.getBody().getCondicion());
         verify(arcoService).crearArco(arcoDTO);
     }
+
 
     @Test
     void actualizar_Success() {
