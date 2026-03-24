@@ -11,10 +11,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
-
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -36,7 +35,6 @@ class ProcesoControllerTest {
     void setUp() {
         empresaId = 1L;
         procesoId = 1L;
-        
         procesoDTO = new ProcesoDTO();
         procesoDTO.setId(procesoId);
         procesoDTO.setNombre("Test Proceso");
@@ -45,14 +43,52 @@ class ProcesoControllerTest {
     @Test
     void listar_Success() {
         List<ProcesoDTO> expectedList = Arrays.asList(procesoDTO);
-        when(procesoService.listarPorEmpresa(empresaId)).thenReturn(expectedList);
+        when(procesoService.listarProcesos()).thenReturn(expectedList);
 
-        ResponseEntity<List<ProcesoDTO>> response = procesoController.listar(empresaId);
+        ResponseEntity<List<ProcesoDTO>> response = procesoController.listar();
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals(1, response.getBody().size());
         assertEquals(procesoDTO.getNombre(), response.getBody().get(0).getNombre());
+        verify(procesoService).listarProcesos();
+    }
+
+    @Test
+    void listar_ListaVacia() {
+        when(procesoService.listarProcesos()).thenReturn(Collections.emptyList());
+
+        ResponseEntity<List<ProcesoDTO>> response = procesoController.listar();
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertTrue(response.getBody().isEmpty());
+        verify(procesoService).listarProcesos();
+    }
+
+    @Test
+    void listarPorEmpresa_Success() {
+        List<ProcesoDTO> expectedList = Arrays.asList(procesoDTO);
+        when(procesoService.listarPorEmpresa(empresaId)).thenReturn(expectedList);
+
+        ResponseEntity<List<ProcesoDTO>> response = procesoController.listarPorEmpresa(empresaId);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(1, response.getBody().size());
+        assertEquals(procesoDTO.getNombre(), response.getBody().get(0).getNombre());
+        verify(procesoService).listarPorEmpresa(empresaId);
+    }
+
+    @Test
+    void listarPorEmpresa_ListaVacia() {
+        when(procesoService.listarPorEmpresa(empresaId)).thenReturn(Collections.emptyList());
+
+        ResponseEntity<List<ProcesoDTO>> response = procesoController.listarPorEmpresa(empresaId);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertTrue(response.getBody().isEmpty());
         verify(procesoService).listarPorEmpresa(empresaId);
     }
 

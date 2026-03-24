@@ -1,5 +1,4 @@
 package com.proyecto.proyectoweb.controller;
-
 import com.proyecto.proyectoweb.dto.UsuarioDTO;
 import com.proyecto.proyectoweb.service.UsuarioService;
 import lombok.RequiredArgsConstructor;
@@ -12,11 +11,15 @@ import java.util.List;
 @RequestMapping("/api/usuarios")
 @RequiredArgsConstructor
 public class UsuarioController {
-
     private final UsuarioService usuarioService;
 
+    @GetMapping
+    public ResponseEntity<List<UsuarioDTO>> listar() {
+        return ResponseEntity.ok(usuarioService.listarUsuarios());
+    }
+
     @GetMapping("/empresa/{empresaId}")
-    public ResponseEntity<List<UsuarioDTO>> listar(@PathVariable Long empresaId) {
+    public ResponseEntity<List<UsuarioDTO>> listarPorEmpresa(@PathVariable Long empresaId) {
         return ResponseEntity.ok(usuarioService.listarPorEmpresa(empresaId));
     }
 

@@ -11,10 +11,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
-
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -36,7 +35,6 @@ class RolProcesoControllerTest {
     void setUp() {
         empresaId = 1L;
         rolId = 1L;
-        
         rolProcesoDTO = new RolProcesoDTO();
         rolProcesoDTO.setId(rolId);
         rolProcesoDTO.setNombre("Test Rol");
@@ -45,14 +43,52 @@ class RolProcesoControllerTest {
     @Test
     void listar_Success() {
         List<RolProcesoDTO> expectedList = Arrays.asList(rolProcesoDTO);
-        when(rolProcesoService.listarPorEmpresa(empresaId)).thenReturn(expectedList);
+        when(rolProcesoService.listarRoles()).thenReturn(expectedList);
 
-        ResponseEntity<List<RolProcesoDTO>> response = rolProcesoController.listar(empresaId);
+        ResponseEntity<List<RolProcesoDTO>> response = rolProcesoController.listar();
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals(1, response.getBody().size());
         assertEquals(rolProcesoDTO.getNombre(), response.getBody().get(0).getNombre());
+        verify(rolProcesoService).listarRoles();
+    }
+
+    @Test
+    void listar_ListaVacia() {
+        when(rolProcesoService.listarRoles()).thenReturn(Collections.emptyList());
+
+        ResponseEntity<List<RolProcesoDTO>> response = rolProcesoController.listar();
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertTrue(response.getBody().isEmpty());
+        verify(rolProcesoService).listarRoles();
+    }
+
+    @Test
+    void listarPorEmpresa_Success() {
+        List<RolProcesoDTO> expectedList = Arrays.asList(rolProcesoDTO);
+        when(rolProcesoService.listarPorEmpresa(empresaId)).thenReturn(expectedList);
+
+        ResponseEntity<List<RolProcesoDTO>> response = rolProcesoController.listarPorEmpresa(empresaId);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(1, response.getBody().size());
+        assertEquals(rolProcesoDTO.getNombre(), response.getBody().get(0).getNombre());
+        verify(rolProcesoService).listarPorEmpresa(empresaId);
+    }
+
+    @Test
+    void listarPorEmpresa_ListaVacia() {
+        when(rolProcesoService.listarPorEmpresa(empresaId)).thenReturn(Collections.emptyList());
+
+        ResponseEntity<List<RolProcesoDTO>> response = rolProcesoController.listarPorEmpresa(empresaId);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertTrue(response.getBody().isEmpty());
         verify(rolProcesoService).listarPorEmpresa(empresaId);
     }
 
