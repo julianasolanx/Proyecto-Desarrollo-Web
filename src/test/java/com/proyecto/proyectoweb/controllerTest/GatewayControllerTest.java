@@ -11,10 +11,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
-
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -36,7 +35,6 @@ class GatewayControllerTest {
     void setUp() {
         procesoId = 1L;
         gatewayId = 1L;
-        
         gatewayDTO = new GatewayDTO();
         gatewayDTO.setId(gatewayId);
         gatewayDTO.setNombre("Test Gateway");
@@ -45,14 +43,52 @@ class GatewayControllerTest {
     @Test
     void listar_Success() {
         List<GatewayDTO> expectedList = Arrays.asList(gatewayDTO);
-        when(gatewayService.listarPorProceso(procesoId)).thenReturn(expectedList);
+        when(gatewayService.listarGateways()).thenReturn(expectedList);
 
-        ResponseEntity<List<GatewayDTO>> response = gatewayController.listar(procesoId);
+        ResponseEntity<List<GatewayDTO>> response = gatewayController.listar();
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals(1, response.getBody().size());
         assertEquals(gatewayDTO.getNombre(), response.getBody().get(0).getNombre());
+        verify(gatewayService).listarGateways();
+    }
+
+    @Test
+    void listar_ListaVacia() {
+        when(gatewayService.listarGateways()).thenReturn(Collections.emptyList());
+
+        ResponseEntity<List<GatewayDTO>> response = gatewayController.listar();
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertTrue(response.getBody().isEmpty());
+        verify(gatewayService).listarGateways();
+    }
+
+    @Test
+    void listarPorProceso_Success() {
+        List<GatewayDTO> expectedList = Arrays.asList(gatewayDTO);
+        when(gatewayService.listarPorProceso(procesoId)).thenReturn(expectedList);
+
+        ResponseEntity<List<GatewayDTO>> response = gatewayController.listarPorProceso(procesoId);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(1, response.getBody().size());
+        assertEquals(gatewayDTO.getNombre(), response.getBody().get(0).getNombre());
+        verify(gatewayService).listarPorProceso(procesoId);
+    }
+
+    @Test
+    void listarPorProceso_ListaVacia() {
+        when(gatewayService.listarPorProceso(procesoId)).thenReturn(Collections.emptyList());
+
+        ResponseEntity<List<GatewayDTO>> response = gatewayController.listarPorProceso(procesoId);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertTrue(response.getBody().isEmpty());
         verify(gatewayService).listarPorProceso(procesoId);
     }
 

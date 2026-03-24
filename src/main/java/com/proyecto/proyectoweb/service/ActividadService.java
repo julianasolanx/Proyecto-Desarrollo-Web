@@ -1,5 +1,4 @@
 package com.proyecto.proyectoweb.service;
-
 import com.proyecto.proyectoweb.dto.ActividadDTO;
 import com.proyecto.proyectoweb.entity.Actividad;
 import com.proyecto.proyectoweb.repository.ActividadRepository;
@@ -13,13 +12,19 @@ import java.util.List;
 
 @Service
 public class ActividadService {
-
     private final ActividadRepository actividadRepository;
     private final ModelMapper modelMapper;
 
     public ActividadService(ActividadRepository actividadRepository, ModelMapper modelMapper) {
         this.actividadRepository = actividadRepository;
         this.modelMapper = modelMapper;
+    }
+
+    @Transactional(readOnly = true)
+    public List<ActividadDTO> listarActividades() {
+        List<Actividad> actividades = actividadRepository.findAll();
+        Type listType = new TypeToken<List<ActividadDTO>>() {}.getType();
+        return modelMapper.map(actividades, listType);
     }
 
     @Transactional(readOnly = true)
@@ -32,7 +37,7 @@ public class ActividadService {
     @Transactional(readOnly = true)
     public ActividadDTO obtenerActividad(Long id) {
         Actividad actividad = actividadRepository.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("Actividad no encontrada"));
+                .orElseThrow(() -> new EntityNotFoundException("Actividad no encontrada"));
         return modelMapper.map(actividad, ActividadDTO.class);
     }
 
@@ -46,7 +51,7 @@ public class ActividadService {
     @Transactional
     public ActividadDTO actualizarActividad(Long id, ActividadDTO dto) {
         Actividad existing = actividadRepository.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("Actividad no encontrada"));
+                .orElseThrow(() -> new EntityNotFoundException("Actividad no encontrada"));
         modelMapper.map(dto, existing);
         Actividad saved = actividadRepository.save(existing);
         return modelMapper.map(saved, ActividadDTO.class);
