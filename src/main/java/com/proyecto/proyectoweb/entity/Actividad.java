@@ -9,9 +9,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Column;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -32,10 +29,7 @@ public class Actividad {
 
     private String nombre;
     private String descripcion;
-    @Enumerated(EnumType.STRING)
     private TipoActividad tipo;
-
-    @Column(name = "status", nullable = false)
     private Integer status = 0;
 
     @ManyToOne
