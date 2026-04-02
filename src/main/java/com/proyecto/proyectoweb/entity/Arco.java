@@ -20,7 +20,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Where(clause = "status = 0")
-@SQLDelete(sql = "UPDATE application SET status = 1 WHERE id=?")
+@SQLDelete(sql = "UPDATE arco SET status = 1 WHERE id=?")
 public class Arco {
 
     @Id
@@ -29,7 +29,7 @@ public class Arco {
 
     private String condicion;
 
-    private String status = "ACTIVO";
+    private Integer status = 0;
 
     @ManyToOne
     @JoinColumn(name = "proceso_id", nullable = false)

@@ -9,6 +9,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -20,7 +22,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Where(clause = "status = 0")
-@SQLDelete(sql = "UPDATE application SET status = 1 WHERE id=?")
+@SQLDelete(sql = "UPDATE usuario SET status = 1 WHERE id=?")
 public class Usuario {
 
     @Id
@@ -30,8 +32,9 @@ public class Usuario {
     private String nombre;
     private String correo;
     private String contrasena;
+    @Enumerated(EnumType.STRING)
     private RolUsuario rol;
-    private String status ="ACTIVO";
+    private Integer status = 0;
 
     @ManyToOne
     @JoinColumn(name = "empresa_id", nullable = false)

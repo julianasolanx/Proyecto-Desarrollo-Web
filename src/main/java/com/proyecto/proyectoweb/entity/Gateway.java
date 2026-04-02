@@ -9,6 +9,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -20,7 +22,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Where(clause = "status = 0")
-@SQLDelete(sql = "UPDATE application SET status = 1 WHERE id=?")
+@SQLDelete(sql = "UPDATE gateway SET status = 1 WHERE id=?")
 public class Gateway {
 
     @Id
@@ -28,10 +30,9 @@ public class Gateway {
     private Long id;
 
     private String nombre;
-
+    @Enumerated(EnumType.STRING)
     private TipoGateway tipo;
-
-    private String status = "ACTIVO";
+    private Integer status = 0;
 
     @ManyToOne
     @JoinColumn(name = "proceso_id", nullable = false)

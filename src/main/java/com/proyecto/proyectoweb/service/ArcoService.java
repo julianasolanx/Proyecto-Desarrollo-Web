@@ -1,60 +1,82 @@
 package com.proyecto.proyectoweb.service;
+
 import com.proyecto.proyectoweb.dto.ArcoDTO;
 import com.proyecto.proyectoweb.entity.Arco;
+import com.proyecto.proyectoweb.entity.Actividad;
+import com.proyecto.proyectoweb.entity.Gateway;
+import com.proyecto.proyectoweb.entity.Proceso;
 import com.proyecto.proyectoweb.repository.ArcoRepository;
+import com.proyecto.proyectoweb.repository.ActividadRepository;
+import com.proyecto.proyectoweb.repository.GatewayRepository;
+import com.proyecto.proyectoweb.repository.ProcesoRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.lang.reflect.Type;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class ArcoService {
+
     private final ArcoRepository arcoRepository;
+    private final ProcesoRepository procesoRepository;
+    private final ActividadRepository actividadRepository;
+    private final GatewayRepository gatewayRepository;
     private final ModelMapper modelMapper;
 
-    public ArcoService(ArcoRepository arcoRepository, ModelMapper modelMapper) {
+    public ArcoService(ArcoRepository arcoRepository,
+                       ProcesoRepository procesoRepository,
+                       ActividadRepository actividadRepository,
+                       GatewayRepository gatewayRepository,
+                       ModelMapper modelMapper) {
         this.arcoRepository = arcoRepository;
+        this.procesoRepository = procesoRepository;
+        this.actividadRepository = actividadRepository;
+        this.gatewayRepository = gatewayRepository;
         this.modelMapper = modelMapper;
     }
 
     @Transactional(readOnly = true)
     public List<ArcoDTO> listarArcos() {
-        List<Arco> arcos = arcoRepository.findAll();
-        Type listType = new TypeToken<List<ArcoDTO>>() {}.getType();
-        return modelMapper.map(arcos, listType);
+        return arcoRepository.findAll().stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public List<ArcoDTO> listarPorProceso(Long procesoId) {
-        List<Arco> arcos = arcoRepository.findByProcesoId(procesoId);
-        Type listType = new TypeToken<List<ArcoDTO>>() {}.getType();
-        return modelMapper.map(arcos, listType);
+        return arcoRepository.findByProcesoId(procesoId).stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public ArcoDTO obtenerArco(Long id) {
         Arco arco = arcoRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Arco no encontrado"));
-        return modelMapper.map(arco, ArcoDTO.class);
+        return mapToDTO(arco);
     }
 
     @Transactional
     public ArcoDTO crearArco(ArcoDTO dto) {
-        Arco arco = modelMapper.map(dto, Arco.class);
-        Arco saved = arcoRepository.save(arco);
-        return modelMapper.map(saved, ArcoDTO.class);
+        Arco arco = new Arco();
+        arco.setCondicion(dto.getCondicion());
+        arco.setStatus(0);
+        resolverRelaciones(arco, dto);
+        return mapToDTO(arcoRepository.save(arco));
     }
 
     @Transactional
     public ArcoDTO actualizarArco(Long id, ArcoDTO dto) {
-        Arco existing = arcoRepository.findById(id)
+        Arco arco = arcoRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Arco no encontrado"));
-        modelMapper.map(dto, existing);
-        Arco saved = arcoRepository.save(existing);
-        return modelMapper.map(saved, ArcoDTO.class);
+        arco.setCondicion(dto.getCondicion());
+        resolverRelaciones(arco, dto);
+        return mapToDTO(arcoRepository.save(arco));
     }
 
     @Transactional
@@ -63,5 +85,59 @@ public class ArcoService {
             throw new EntityNotFoundException("Arco no encontrado");
         }
         arcoRepository.deleteById(id);
+    }
+
+    // -------------------------------------------------------
+    // Métodos privados de apoyo
+    // -------------------------------------------------------
+
+    private void resolverRelaciones(Arco arco, ArcoDTO dto) {
+        Proceso proceso = procesoRepository.findById(dto.getProcesoId())
+                .orElseThrow(() -> new EntityNotFoundException("Proceso no encontrado"));
+        arco.setProceso(proceso);
+
+        if (dto.getActividadOrigenId() != null) {
+            Actividad origen = actividadRepository.findById(dto.getActividadOrigenId())
+                    .orElseThrow(() -> new EntityNotFoundException("Actividad origen no encontrada"));
+            arco.setActividadOrigen(origen);
+        } else {
+            arco.setActividadOrigen(null);
+        }
+
+        if (dto.getGatewayOrigenId() != null) {
+            Gateway gOrigen = gatewayRepository.findById(dto.getGatewayOrigenId())
+                    .orElseThrow(() -> new EntityNotFoundException("Gateway origen no encontrado"));
+            arco.setGatewayOrigen(gOrigen);
+        } else {
+            arco.setGatewayOrigen(null);
+        }
+
+        if (dto.getActividadDestinoId() != null) {
+            Actividad destino = actividadRepository.findById(dto.getActividadDestinoId())
+                    .orElseThrow(() -> new EntityNotFoundException("Actividad destino no encontrada"));
+            arco.setActividadDestino(destino);
+        } else {
+            arco.setActividadDestino(null);
+        }
+
+        if (dto.getGatewayDestinoId() != null) {
+            Gateway gDestino = gatewayRepository.findById(dto.getGatewayDestinoId())
+                    .orElseThrow(() -> new EntityNotFoundException("Gateway destino no encontrado"));
+            arco.setGatewayDestino(gDestino);
+        } else {
+            arco.setGatewayDestino(null);
+        }
+    }
+
+    private ArcoDTO mapToDTO(Arco arco) {
+        ArcoDTO dto = new ArcoDTO();
+        dto.setId(arco.getId());
+        dto.setCondicion(arco.getCondicion());
+        dto.setProcesoId(arco.getProceso() != null ? arco.getProceso().getId() : null);
+        dto.setActividadOrigenId(arco.getActividadOrigen() != null ? arco.getActividadOrigen().getId() : null);
+        dto.setGatewayOrigenId(arco.getGatewayOrigen() != null ? arco.getGatewayOrigen().getId() : null);
+        dto.setActividadDestinoId(arco.getActividadDestino() != null ? arco.getActividadDestino().getId() : null);
+        dto.setGatewayDestinoId(arco.getGatewayDestino() != null ? arco.getGatewayDestino().getId() : null);
+        return dto;
     }
 }
