@@ -64,4 +64,9 @@ public class UsuarioService {
         }
         usuarioRepository.deleteById(id);
     }
+
+    @Transactional(readOnly = true)
+    public boolean login(String correo, String contrasena) {
+        return usuarioRepository.login(correo, contrasena).isPresent();
+    }
 }
