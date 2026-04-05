@@ -1,5 +1,4 @@
 package com.proyecto.proyectoweb.service;
-
 import com.proyecto.proyectoweb.dto.RolProcesoDTO;
 import com.proyecto.proyectoweb.entity.RolProceso;
 import com.proyecto.proyectoweb.repository.RolProcesoRepository;
@@ -13,13 +12,19 @@ import java.util.List;
 
 @Service
 public class RolProcesoService {
-
     private final RolProcesoRepository rolProcesoRepository;
     private final ModelMapper modelMapper;
 
     public RolProcesoService(RolProcesoRepository rolProcesoRepository, ModelMapper modelMapper) {
         this.rolProcesoRepository = rolProcesoRepository;
         this.modelMapper = modelMapper;
+    }
+
+    @Transactional(readOnly = true)
+    public List<RolProcesoDTO> listarRoles() {
+        List<RolProceso> roles = rolProcesoRepository.findAll();
+        Type listType = new TypeToken<List<RolProcesoDTO>>() {}.getType();
+        return modelMapper.map(roles, listType);
     }
 
     @Transactional(readOnly = true)
@@ -32,7 +37,7 @@ public class RolProcesoService {
     @Transactional(readOnly = true)
     public RolProcesoDTO obtenerRol(Long id) {
         RolProceso rolProceso = rolProcesoRepository.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("Rol no encontrado"));
+                .orElseThrow(() -> new EntityNotFoundException("Rol no encontrado"));
         return modelMapper.map(rolProceso, RolProcesoDTO.class);
     }
 
@@ -46,7 +51,7 @@ public class RolProcesoService {
     @Transactional
     public RolProcesoDTO actualizarRol(Long id, RolProcesoDTO dto) {
         RolProceso existing = rolProcesoRepository.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("Rol no encontrado"));
+                .orElseThrow(() -> new EntityNotFoundException("Rol no encontrado"));
         modelMapper.map(dto, existing);
         RolProceso saved = rolProcesoRepository.save(existing);
         return modelMapper.map(saved, RolProcesoDTO.class);

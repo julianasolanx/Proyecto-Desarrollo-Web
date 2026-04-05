@@ -1,5 +1,4 @@
 package com.proyecto.proyectoweb.controller;
-
 import com.proyecto.proyectoweb.dto.ActividadDTO;
 import com.proyecto.proyectoweb.service.ActividadService;
 import lombok.RequiredArgsConstructor;
@@ -12,11 +11,15 @@ import java.util.List;
 @RequestMapping("/api/actividades")
 @RequiredArgsConstructor
 public class ActividadController {
-
     private final ActividadService actividadService;
 
+    @GetMapping
+    public ResponseEntity<List<ActividadDTO>> listar() {
+        return ResponseEntity.ok(actividadService.listarActividades());
+    }
+
     @GetMapping("/proceso/{procesoId}")
-    public ResponseEntity<List<ActividadDTO>> listar(@PathVariable Long procesoId) {
+    public ResponseEntity<List<ActividadDTO>> listarPorProceso(@PathVariable Long procesoId) {
         return ResponseEntity.ok(actividadService.listarPorProceso(procesoId));
     }
 

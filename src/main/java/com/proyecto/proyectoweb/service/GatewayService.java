@@ -1,5 +1,4 @@
 package com.proyecto.proyectoweb.service;
-
 import com.proyecto.proyectoweb.dto.GatewayDTO;
 import com.proyecto.proyectoweb.entity.Gateway;
 import com.proyecto.proyectoweb.repository.GatewayRepository;
@@ -13,13 +12,19 @@ import java.util.List;
 
 @Service
 public class GatewayService {
-
     private final GatewayRepository gatewayRepository;
     private final ModelMapper modelMapper;
 
     public GatewayService(GatewayRepository gatewayRepository, ModelMapper modelMapper) {
         this.gatewayRepository = gatewayRepository;
         this.modelMapper = modelMapper;
+    }
+
+    @Transactional(readOnly = true)
+    public List<GatewayDTO> listarGateways() {
+        List<Gateway> gateways = gatewayRepository.findAll();
+        Type listType = new TypeToken<List<GatewayDTO>>() {}.getType();
+        return modelMapper.map(gateways, listType);
     }
 
     @Transactional(readOnly = true)
@@ -32,7 +37,7 @@ public class GatewayService {
     @Transactional(readOnly = true)
     public GatewayDTO obtenerGateway(Long id) {
         Gateway gateway = gatewayRepository.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("Gateway no encontrado"));
+                .orElseThrow(() -> new EntityNotFoundException("Gateway no encontrado"));
         return modelMapper.map(gateway, GatewayDTO.class);
     }
 
@@ -46,7 +51,7 @@ public class GatewayService {
     @Transactional
     public GatewayDTO actualizarGateway(Long id, GatewayDTO dto) {
         Gateway existing = gatewayRepository.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("Gateway no encontrado"));
+                .orElseThrow(() -> new EntityNotFoundException("Gateway no encontrado"));
         modelMapper.map(dto, existing);
         Gateway saved = gatewayRepository.save(existing);
         return modelMapper.map(saved, GatewayDTO.class);

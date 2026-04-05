@@ -22,7 +22,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Where(clause = "status = 0")
-@SQLDelete(sql = "UPDATE application SET status = 1 WHERE id=?")
+@SQLDelete(sql = "UPDATE empresa SET status = 1 WHERE id=?")
 public class Empresa {
 
     @Id
@@ -30,12 +30,9 @@ public class Empresa {
     private Long id;
 
     private String nombre;
-
     private String nit;
-
     private String correoContacto;
-
-    private String status = "ACTIVO";
+    private Integer status = 0;
 
     @OneToMany(mappedBy = "empresa", cascade = CascadeType.ALL)
     private List<Usuario> usuarios;

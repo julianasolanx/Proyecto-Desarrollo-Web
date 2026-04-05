@@ -1,5 +1,4 @@
 package com.proyecto.proyectoweb.controller;
-
 import com.proyecto.proyectoweb.dto.RolProcesoDTO;
 import com.proyecto.proyectoweb.service.RolProcesoService;
 import lombok.RequiredArgsConstructor;
@@ -12,11 +11,15 @@ import java.util.List;
 @RequestMapping("/api/roles")
 @RequiredArgsConstructor
 public class RolProcesoController {
-
     private final RolProcesoService rolProcesoService;
 
+    @GetMapping
+    public ResponseEntity<List<RolProcesoDTO>> listar() {
+        return ResponseEntity.ok(rolProcesoService.listarRoles());
+    }
+
     @GetMapping("/empresa/{empresaId}")
-    public ResponseEntity<List<RolProcesoDTO>> listar(@PathVariable Long empresaId) {
+    public ResponseEntity<List<RolProcesoDTO>> listarPorEmpresa(@PathVariable Long empresaId) {
         return ResponseEntity.ok(rolProcesoService.listarPorEmpresa(empresaId));
     }
 

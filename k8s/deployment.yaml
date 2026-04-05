@@ -14,12 +14,15 @@ spec:
         app: proyecto
     spec:
       imagePullSecrets:
-      - name: ghcr-secret
+        - name: ghcr-secret
       containers:
-      - name: proyecto
-        image: ghcr.io/julianasolanx/Proyecto-Desarrollo-Web:latest
-        ports:
-        - containerPort: 8080
+        - name: proyecto
+          image: ghcr.io/julianasolanx/proyecto-desarrollo-web:latest
+          ports:
+            - containerPort: 8080
+          envFrom:                        # ← ESTO ES LO QUE SE AGREGA
+            - configMapRef:
+                name: app-config         
 ---
 apiVersion: v1
 kind: Service
@@ -37,18 +40,18 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-   name: proyecto
-   namespace: grupo22
+  name: proyecto
+  namespace: grupo22
 spec:
-   ingressClassName: public
-   rules:
-   - host: grupo22.inphotech.co
-     http:
-       paths:
-       - path: /
-         pathType: Prefix
-         backend:
-           service:
-             name: proyecto
-             port:
-               number: 8080
+  ingressClassName: public
+  rules:
+    - host: grupo22.inphotech.co
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: proyecto
+                port:
+                  number: 8080

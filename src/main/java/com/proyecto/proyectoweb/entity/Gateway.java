@@ -20,7 +20,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Where(clause = "status = 0")
-@SQLDelete(sql = "UPDATE application SET status = 1 WHERE id=?")
+@SQLDelete(sql = "UPDATE gateway SET status = 1 WHERE id=?")
 public class Gateway {
 
     @Id
@@ -28,10 +28,8 @@ public class Gateway {
     private Long id;
 
     private String nombre;
-
     private TipoGateway tipo;
-
-    private String status = "ACTIVO";
+    private Integer status = 0;
 
     @ManyToOne
     @JoinColumn(name = "proceso_id", nullable = false)

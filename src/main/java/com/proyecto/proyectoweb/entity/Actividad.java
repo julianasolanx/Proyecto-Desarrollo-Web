@@ -20,7 +20,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Where(clause = "status = 0")
-@SQLDelete(sql = "UPDATE application SET status = 1 WHERE id=?")
+@SQLDelete(sql = "UPDATE actividad SET status = 1 WHERE id=?")
 public class Actividad {
 
     @Id
@@ -28,12 +28,9 @@ public class Actividad {
     private Long id;
 
     private String nombre;
-
     private String descripcion;
-
     private TipoActividad tipo;
-
-    private String status = "ACTIVO";
+    private Integer status = 0;
 
     @ManyToOne
     @JoinColumn(name = "proceso_id", nullable = false)

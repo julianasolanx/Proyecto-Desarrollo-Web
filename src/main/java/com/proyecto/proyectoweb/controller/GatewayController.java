@@ -1,5 +1,4 @@
 package com.proyecto.proyectoweb.controller;
-
 import com.proyecto.proyectoweb.dto.GatewayDTO;
 import com.proyecto.proyectoweb.service.GatewayService;
 import lombok.RequiredArgsConstructor;
@@ -12,11 +11,15 @@ import java.util.List;
 @RequestMapping("/api/gateways")
 @RequiredArgsConstructor
 public class GatewayController {
-
     private final GatewayService gatewayService;
 
+    @GetMapping
+    public ResponseEntity<List<GatewayDTO>> listar() {
+        return ResponseEntity.ok(gatewayService.listarGateways());
+    }
+
     @GetMapping("/proceso/{procesoId}")
-    public ResponseEntity<List<GatewayDTO>> listar(@PathVariable Long procesoId) {
+    public ResponseEntity<List<GatewayDTO>> listarPorProceso(@PathVariable Long procesoId) {
         return ResponseEntity.ok(gatewayService.listarPorProceso(procesoId));
     }
 
