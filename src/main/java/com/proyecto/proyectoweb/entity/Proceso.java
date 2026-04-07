@@ -3,10 +3,12 @@ package com.proyecto.proyectoweb.entity;
 import java.util.List;
 
 import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.Where;
+import org.hibernate.annotations.SQLRestriction;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -23,7 +25,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Where(clause = "status = 0")
+@SQLRestriction("status = '0'")
 @SQLDelete(sql = "UPDATE proceso SET status = 1 WHERE id=?")
 public class Proceso {
 
@@ -34,6 +36,7 @@ public class Proceso {
     private String nombre;
     private String descripcion;
     private String categoria;
+    @Enumerated(EnumType.STRING)
     private EstadoProceso estado;
     private Integer status = 0;
 
@@ -41,13 +44,13 @@ public class Proceso {
     @JoinColumn(name = "empresa_id", nullable = false)
     private Empresa empresa;
 
-    @OneToMany(mappedBy = "proceso", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "proceso", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private List<Actividad> actividades;
 
-    @OneToMany(mappedBy = "proceso", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "proceso", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private List<Gateway> gateways;
 
-    @OneToMany(mappedBy = "proceso", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "proceso", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private List<Arco> arcos;
 
     public enum EstadoProceso {
