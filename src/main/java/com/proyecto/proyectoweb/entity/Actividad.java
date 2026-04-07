@@ -1,9 +1,11 @@
 package com.proyecto.proyectoweb.entity;
 
 import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.Where;
+import org.hibernate.annotations.SQLRestriction;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -19,7 +21,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Where(clause = "status = 0")
+@SQLRestriction("status = '0'")
 @SQLDelete(sql = "UPDATE actividad SET status = 1 WHERE id=?")
 public class Actividad {
 
@@ -29,6 +31,7 @@ public class Actividad {
 
     private String nombre;
     private String descripcion;
+    @Enumerated(EnumType.STRING)
     private TipoActividad tipo;
     private Integer status = 0;
 
