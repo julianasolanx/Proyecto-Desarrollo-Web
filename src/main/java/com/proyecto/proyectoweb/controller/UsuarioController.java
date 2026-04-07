@@ -1,5 +1,7 @@
 package com.proyecto.proyectoweb.controller;
+import com.proyecto.proyectoweb.dto.CrearUsuarioDTO;
 import com.proyecto.proyectoweb.dto.EmailRequestDTO;
+import com.proyecto.proyectoweb.dto.LoginRequestDTO;
 import com.proyecto.proyectoweb.dto.UsuarioDTO;
 import com.proyecto.proyectoweb.service.EmailService;
 import com.proyecto.proyectoweb.service.UsuarioService;
@@ -34,19 +36,13 @@ public class UsuarioController {
     }
 
     @PostMapping
-    public ResponseEntity<UsuarioDTO> crear(@RequestBody UsuarioDTO dto) {
+    public ResponseEntity<UsuarioDTO> crear(@RequestBody CrearUsuarioDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(usuarioService.crearUsuario(dto));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody UsuarioDTO dto) {
-    boolean existe = usuarioService.login(dto.getCorreo(), dto.getContrasena());
-    if (existe) {
-        return ResponseEntity.ok("OK");
-    } else {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body("Usuario no encontrado");
-    }
+    public ResponseEntity<UsuarioDTO> login(@RequestBody LoginRequestDTO dto) {
+        return ResponseEntity.ok(usuarioService.login(dto.getCorreo(), dto.getContrasena()));
     }
 
     @PutMapping("/{id}")
