@@ -1,9 +1,11 @@
 package com.proyecto.proyectoweb.entity;
 
 import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.Where;
+import org.hibernate.annotations.SQLRestriction;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -19,7 +21,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Where(clause = "status = 0")
+@SQLRestriction("status = '0'")
 @SQLDelete(sql = "UPDATE gateway SET status = 1 WHERE id=?")
 public class Gateway {
 
@@ -28,6 +30,7 @@ public class Gateway {
     private Long id;
 
     private String nombre;
+    @Enumerated(EnumType.STRING)
     private TipoGateway tipo;
     private Integer status = 0;
 
