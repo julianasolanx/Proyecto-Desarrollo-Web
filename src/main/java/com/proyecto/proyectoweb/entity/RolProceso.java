@@ -3,7 +3,7 @@ package com.proyecto.proyectoweb.entity;
 import java.util.List;
 
 import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.Where;
+import org.hibernate.annotations.SQLRestriction;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -22,7 +22,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Where(clause = "status = 0")
+@SQLRestriction("status = '0'")
 @SQLDelete(sql = "UPDATE rol_proceso SET status = 1 WHERE id=?")
 public class RolProceso {
 
