@@ -2,10 +2,9 @@ package com.proyecto.proyectoweb.serviceTest;
 
 import com.proyecto.proyectoweb.dto.EmpresaDTO;
 import com.proyecto.proyectoweb.entity.Empresa;
-import com.proyecto.proyectoweb.entity.Usuario;
 import com.proyecto.proyectoweb.repository.EmpresaRepository;
-import com.proyecto.proyectoweb.repository.UsuarioRepository;
 import com.proyecto.proyectoweb.service.EmpresaService;
+import com.proyecto.proyectoweb.service.UsuarioService;
 
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,7 +32,7 @@ class EmpresaServiceTest {
     private EmpresaRepository empresaRepository;
 
     @Mock
-    private UsuarioRepository usuarioRepository;
+    private UsuarioService usuarioService;
 
     @Mock
     private ModelMapper modelMapper;
@@ -48,12 +47,12 @@ class EmpresaServiceTest {
     @BeforeEach
     void setUp() {
         empresaId = 1L;
-        
+
         empresa = new Empresa();
         empresa.setId(empresaId);
         empresa.setNombre("Test Empresa");
         empresa.setNit("123456789");
-        
+
         empresaDTO = new EmpresaDTO();
         empresaDTO.setId(empresaId);
         empresaDTO.setNombre("Test Empresa");
@@ -106,7 +105,7 @@ class EmpresaServiceTest {
     void obtenerEmpresa_NotFound() {
         when(empresaRepository.findById(empresaId)).thenReturn(Optional.empty());
 
-        assertThrows(EntityNotFoundException.class, () -> 
+        assertThrows(EntityNotFoundException.class, () ->
             empresaService.obtenerEmpresa(empresaId));
     }
 
@@ -114,7 +113,7 @@ class EmpresaServiceTest {
     void crearEmpresa_Success() {
         when(modelMapper.map(empresaDTO, Empresa.class)).thenReturn(empresa);
         when(empresaRepository.save(empresa)).thenReturn(empresa);
-        when(usuarioRepository.save(any(Usuario.class))).thenReturn(new Usuario());
+        doNothing().when(usuarioService).registrarAdmin(empresa);
         when(modelMapper.map(empresa, EmpresaDTO.class)).thenReturn(empresaDTO);
 
         EmpresaDTO result = empresaService.crearEmpresa(empresaDTO);
@@ -122,7 +121,7 @@ class EmpresaServiceTest {
         assertNotNull(result);
         assertEquals(empresaDTO.getNombre(), result.getNombre());
         verify(empresaRepository).save(empresa);
-        verify(usuarioRepository).save(any(Usuario.class));
+        verify(usuarioService).registrarAdmin(empresa);
     }
 
     @Test
@@ -151,7 +150,7 @@ class EmpresaServiceTest {
     void actualizarEmpresa_NotFound() {
         when(empresaRepository.findById(empresaId)).thenReturn(Optional.empty());
 
-        assertThrows(EntityNotFoundException.class, () -> 
+        assertThrows(EntityNotFoundException.class, () ->
             empresaService.actualizarEmpresa(empresaId, empresaDTO));
     }
 
@@ -168,7 +167,7 @@ class EmpresaServiceTest {
     void eliminarEmpresa_NotFound() {
         when(empresaRepository.existsById(empresaId)).thenReturn(false);
 
-        assertThrows(EntityNotFoundException.class, () -> 
+        assertThrows(EntityNotFoundException.class, () ->
             empresaService.eliminarEmpresa(empresaId));
         verify(empresaRepository, never()).deleteById(any());
     }

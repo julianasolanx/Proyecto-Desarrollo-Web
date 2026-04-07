@@ -4,11 +4,11 @@ import com.proyecto.proyectoweb.dto.CrearUsuarioDTO;
 import com.proyecto.proyectoweb.dto.UsuarioDTO;
 import com.proyecto.proyectoweb.entity.Empresa;
 import com.proyecto.proyectoweb.entity.Usuario;
-import com.proyecto.proyectoweb.repository.EmpresaRepository;
 import com.proyecto.proyectoweb.repository.UsuarioRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,16 +19,16 @@ import java.util.List;
 public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
-    private final EmpresaRepository empresaRepository;
+    private final EmpresaService empresaService;
     private final EmailService emailService;
     private final ModelMapper modelMapper;
 
     public UsuarioService(UsuarioRepository usuarioRepository,
-                          EmpresaRepository empresaRepository,
+                          @Lazy EmpresaService empresaService,
                           EmailService emailService,
                           ModelMapper modelMapper) {
         this.usuarioRepository = usuarioRepository;
-        this.empresaRepository = empresaRepository;
+        this.empresaService = empresaService;
         this.emailService = emailService;
         this.modelMapper = modelMapper;
     }
@@ -56,8 +56,7 @@ public class UsuarioService {
 
     @Transactional
     public UsuarioDTO crearUsuario(CrearUsuarioDTO dto) {
-        Empresa empresa = empresaRepository.findById(dto.getEmpresaId())
-                .orElseThrow(() -> new EntityNotFoundException("Empresa no encontrada"));
+        Empresa empresa = empresaService.obtenerEntidad(dto.getEmpresaId());
 
         Usuario usuario = modelMapper.map(dto, Usuario.class);
         usuario.setEmpresa(empresa);
@@ -83,9 +82,7 @@ public class UsuarioService {
         modelMapper.map(dto, usuario);
 
         if (dto.getEmpresaId() != null) {
-            Empresa empresa = empresaRepository.findById(dto.getEmpresaId())
-                    .orElseThrow(() -> new EntityNotFoundException("Empresa no encontrada"));
-            usuario.setEmpresa(empresa);
+            usuario.setEmpresa(empresaService.obtenerEntidad(dto.getEmpresaId()));
         }
 
         return modelMapper.map(usuarioRepository.save(usuario), UsuarioDTO.class);
@@ -97,6 +94,16 @@ public class UsuarioService {
             throw new EntityNotFoundException("Usuario no encontrado");
         }
         usuarioRepository.deleteById(id);
+    }
+
+    public void registrarAdmin(Empresa empresa) {
+        Usuario admin = new Usuario();
+        admin.setNombre("Administrador");
+        admin.setCorreo(empresa.getCorreoContacto());
+        admin.setContrasena("admin123");
+        admin.setRol(Usuario.RolUsuario.ADMINISTRADOR);
+        admin.setEmpresa(empresa);
+        usuarioRepository.save(admin);
     }
 
     @Transactional(readOnly = true)

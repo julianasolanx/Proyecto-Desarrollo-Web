@@ -3,11 +3,11 @@ package com.proyecto.proyectoweb.serviceTest;
 import com.proyecto.proyectoweb.dto.ProcesoDTO;
 import com.proyecto.proyectoweb.entity.Empresa;
 import com.proyecto.proyectoweb.entity.Proceso;
-import com.proyecto.proyectoweb.repository.ActividadRepository;
-import com.proyecto.proyectoweb.repository.ArcoRepository;
-import com.proyecto.proyectoweb.repository.EmpresaRepository;
-import com.proyecto.proyectoweb.repository.GatewayRepository;
 import com.proyecto.proyectoweb.repository.ProcesoRepository;
+import com.proyecto.proyectoweb.service.ActividadService;
+import com.proyecto.proyectoweb.service.ArcoService;
+import com.proyecto.proyectoweb.service.EmpresaService;
+import com.proyecto.proyectoweb.service.GatewayService;
 import com.proyecto.proyectoweb.service.ProcesoService;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -35,16 +35,16 @@ class ProcesoServiceTest {
     private ProcesoRepository procesoRepository;
 
     @Mock
-    private EmpresaRepository empresaRepository;
+    private EmpresaService empresaService;
 
     @Mock
-    private ActividadRepository actividadRepository;
+    private ActividadService actividadService;
 
     @Mock
-    private GatewayRepository gatewayRepository;
+    private GatewayService gatewayService;
 
     @Mock
-    private ArcoRepository arcoRepository;
+    private ArcoService arcoService;
 
     @Mock
     private ModelMapper modelMapper;
@@ -79,6 +79,37 @@ class ProcesoServiceTest {
     }
 
     @Test
+    void listarProcesos_Success() {
+        List<Proceso> procesos = Arrays.asList(proceso);
+        List<ProcesoDTO> expectedDTOs = Arrays.asList(procesoDTO);
+        Type listType = new TypeToken<List<ProcesoDTO>>() {}.getType();
+
+        when(procesoRepository.findAll()).thenReturn(procesos);
+        when(modelMapper.map(procesos, listType)).thenReturn(expectedDTOs);
+
+        List<ProcesoDTO> result = procesoService.listarProcesos();
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        verify(procesoRepository).findAll();
+    }
+
+    @Test
+    void listarPorEmpresaConFiltros_Success() {
+        List<Proceso> procesos = Arrays.asList(proceso);
+        List<ProcesoDTO> expectedDTOs = Arrays.asList(procesoDTO);
+        Type listType = new TypeToken<List<ProcesoDTO>>() {}.getType();
+
+        when(procesoRepository.findByEmpresaIdAndFiltros(empresaId, "activo", "ventas")).thenReturn(procesos);
+        when(modelMapper.map(procesos, listType)).thenReturn(expectedDTOs);
+
+        List<ProcesoDTO> result = procesoService.listarPorEmpresaConFiltros(empresaId, "activo", "ventas");
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+    }
+
+    @Test
     void listarPorEmpresa_Success() {
         List<Proceso> procesos = Arrays.asList(proceso);
         List<ProcesoDTO> expectedDTOs = Arrays.asList(procesoDTO);
@@ -109,13 +140,13 @@ class ProcesoServiceTest {
     void obtenerProceso_NotFound() {
         when(procesoRepository.findById(procesoId)).thenReturn(Optional.empty());
 
-        assertThrows(EntityNotFoundException.class, () -> 
+        assertThrows(EntityNotFoundException.class, () ->
             procesoService.obtenerProceso(procesoId));
     }
 
     @Test
     void crearProceso_Success() {
-        when(empresaRepository.findById(empresaId)).thenReturn(Optional.of(empresa));
+        when(empresaService.obtenerEntidad(empresaId)).thenReturn(empresa);
         when(modelMapper.map(procesoDTO, Proceso.class)).thenReturn(proceso);
         when(procesoRepository.save(proceso)).thenReturn(proceso);
         when(modelMapper.map(proceso, ProcesoDTO.class)).thenReturn(procesoDTO);
@@ -149,11 +180,43 @@ class ProcesoServiceTest {
     }
 
     @Test
+    void actualizarProceso_NullEmpresaId() {
+        ProcesoDTO updateDTO = new ProcesoDTO();
+        updateDTO.setNombre("Updated Proceso");
+
+        when(procesoRepository.findById(procesoId)).thenReturn(Optional.of(proceso));
+        doAnswer(invocation -> null).when(modelMapper).map(updateDTO, proceso);
+        when(procesoRepository.save(proceso)).thenReturn(proceso);
+        when(modelMapper.map(proceso, ProcesoDTO.class)).thenReturn(procesoDTO);
+
+        ProcesoDTO result = procesoService.actualizarProceso(procesoId, updateDTO);
+
+        assertNotNull(result);
+        verify(empresaService, never()).obtenerEntidad(any());
+    }
+
+    @Test
+    void actualizarProceso_NotFound() {
+        when(procesoRepository.findById(procesoId)).thenReturn(Optional.empty());
+
+        assertThrows(EntityNotFoundException.class, () ->
+            procesoService.actualizarProceso(procesoId, procesoDTO));
+    }
+
+    @Test
+    void crearProceso_EmpresaNotFound() {
+        when(empresaService.obtenerEntidad(empresaId)).thenThrow(new EntityNotFoundException("Empresa no encontrada"));
+
+        assertThrows(EntityNotFoundException.class, () ->
+            procesoService.crearProceso(procesoDTO));
+    }
+
+    @Test
     void eliminarProceso_Success() {
         when(procesoRepository.existsById(procesoId)).thenReturn(true);
-        when(actividadRepository.findByProcesoId(procesoId)).thenReturn(List.of());
-        when(gatewayRepository.findByProcesoId(procesoId)).thenReturn(List.of());
-        when(arcoRepository.findByProcesoId(procesoId)).thenReturn(List.of());
+        when(actividadService.existenPorProceso(procesoId)).thenReturn(false);
+        when(gatewayService.existenPorProceso(procesoId)).thenReturn(false);
+        when(arcoService.existenArcosPorProceso(procesoId)).thenReturn(false);
         doNothing().when(procesoRepository).deleteById(procesoId);
 
         assertDoesNotThrow(() -> procesoService.eliminarProceso(procesoId));
@@ -163,7 +226,7 @@ class ProcesoServiceTest {
     @Test
     void eliminarProceso_ConElementos_ThrowsConflict() {
         when(procesoRepository.existsById(procesoId)).thenReturn(true);
-        when(actividadRepository.findByProcesoId(procesoId)).thenReturn(List.of(new com.proyecto.proyectoweb.entity.Actividad()));
+        when(actividadService.existenPorProceso(procesoId)).thenReturn(true);
 
         assertThrows(IllegalStateException.class, () ->
             procesoService.eliminarProceso(procesoId));

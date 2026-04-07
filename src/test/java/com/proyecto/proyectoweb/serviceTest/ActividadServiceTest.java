@@ -4,11 +4,12 @@ import com.proyecto.proyectoweb.dto.ActividadDTO;
 import com.proyecto.proyectoweb.entity.Actividad;
 import com.proyecto.proyectoweb.entity.Actividad.TipoActividad;
 import com.proyecto.proyectoweb.entity.Proceso;
+import com.proyecto.proyectoweb.entity.RolProceso;
 import com.proyecto.proyectoweb.repository.ActividadRepository;
-import com.proyecto.proyectoweb.repository.ArcoRepository;
-import com.proyecto.proyectoweb.repository.ProcesoRepository;
-import com.proyecto.proyectoweb.repository.RolProcesoRepository;
 import com.proyecto.proyectoweb.service.ActividadService;
+import com.proyecto.proyectoweb.service.ArcoService;
+import com.proyecto.proyectoweb.service.ProcesoService;
+import com.proyecto.proyectoweb.service.RolProcesoService;
 
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,13 +37,13 @@ class ActividadServiceTest {
     private ActividadRepository actividadRepository;
 
     @Mock
-    private ArcoRepository arcoRepository;
+    private ArcoService arcoService;
 
     @Mock
-    private ProcesoRepository procesoRepository;
+    private ProcesoService procesoService;
 
     @Mock
-    private RolProcesoRepository rolProcesoRepository;
+    private RolProcesoService rolProcesoService;
 
     @Mock
     private ModelMapper modelMapper;
@@ -74,6 +75,22 @@ class ActividadServiceTest {
         actividadDTO.setNombre("Test Actividad");
         actividadDTO.setTipo("TAREA");
         actividadDTO.setProcesoId(procesoId);
+    }
+
+    @Test
+    void listarActividades_Success() {
+        List<Actividad> actividades = Arrays.asList(actividad);
+        List<ActividadDTO> expectedDTOs = Arrays.asList(actividadDTO);
+        Type listType = new TypeToken<List<ActividadDTO>>() {}.getType();
+
+        when(actividadRepository.findAll()).thenReturn(actividades);
+        when(modelMapper.map(actividades, listType)).thenReturn(expectedDTOs);
+
+        List<ActividadDTO> result = actividadService.listarActividades();
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        verify(actividadRepository).findAll();
     }
 
     @Test
@@ -130,7 +147,7 @@ class ActividadServiceTest {
 
     @Test
     void crearActividad_Success() {
-        when(procesoRepository.findById(procesoId)).thenReturn(Optional.of(proceso));
+        when(procesoService.obtenerEntidad(procesoId)).thenReturn(proceso);
         when(modelMapper.map(actividadDTO, Actividad.class)).thenReturn(actividad);
         when(actividadRepository.save(actividad)).thenReturn(actividad);
         when(modelMapper.map(actividad, ActividadDTO.class)).thenReturn(actividadDTO);
@@ -144,7 +161,7 @@ class ActividadServiceTest {
 
     @Test
     void crearActividad_ProcesoNotFound() {
-        when(procesoRepository.findById(procesoId)).thenReturn(Optional.empty());
+        when(procesoService.obtenerEntidad(procesoId)).thenThrow(new EntityNotFoundException("Proceso no encontrado"));
 
         assertThrows(EntityNotFoundException.class, () ->
             actividadService.crearActividad(actividadDTO));
@@ -157,7 +174,7 @@ class ActividadServiceTest {
         updateDTO.setProcesoId(procesoId);
 
         when(actividadRepository.findById(actividadId)).thenReturn(Optional.of(actividad));
-        when(procesoRepository.findById(procesoId)).thenReturn(Optional.of(proceso));
+        when(procesoService.obtenerEntidad(procesoId)).thenReturn(proceso);
         doAnswer(invocation -> {
             ActividadDTO source = invocation.getArgument(0);
             Actividad destination = invocation.getArgument(1);
@@ -185,8 +202,7 @@ class ActividadServiceTest {
     @Test
     void eliminarActividad_Success() {
         when(actividadRepository.existsById(actividadId)).thenReturn(true);
-        when(arcoRepository.findByActividadOrigenId(actividadId)).thenReturn(List.of());
-        when(arcoRepository.findByActividadDestinoId(actividadId)).thenReturn(List.of());
+        when(arcoService.existenArcosPorActividad(actividadId)).thenReturn(false);
         doNothing().when(actividadRepository).deleteById(actividadId);
 
         assertDoesNotThrow(() -> actividadService.eliminarActividad(actividadId));
@@ -196,11 +212,47 @@ class ActividadServiceTest {
     @Test
     void eliminarActividad_ConArcos_ThrowsConflict() {
         when(actividadRepository.existsById(actividadId)).thenReturn(true);
-        when(arcoRepository.findByActividadOrigenId(actividadId)).thenReturn(List.of(new com.proyecto.proyectoweb.entity.Arco()));
+        when(arcoService.existenArcosPorActividad(actividadId)).thenReturn(true);
 
         assertThrows(IllegalStateException.class, () ->
             actividadService.eliminarActividad(actividadId));
         verify(actividadRepository, never()).deleteById(any());
+    }
+
+    @Test
+    void crearActividad_ConRolResponsable() {
+        Long rolId = 2L;
+        RolProceso rol = new RolProceso();
+        rol.setId(rolId);
+
+        actividadDTO.setRolResponsableId(rolId);
+
+        when(procesoService.obtenerEntidad(procesoId)).thenReturn(proceso);
+        when(rolProcesoService.obtenerEntidad(rolId)).thenReturn(rol);
+        when(modelMapper.map(actividadDTO, Actividad.class)).thenReturn(actividad);
+        when(actividadRepository.save(actividad)).thenReturn(actividad);
+        when(modelMapper.map(actividad, ActividadDTO.class)).thenReturn(actividadDTO);
+
+        ActividadDTO result = actividadService.crearActividad(actividadDTO);
+
+        assertNotNull(result);
+        verify(rolProcesoService).obtenerEntidad(rolId);
+    }
+
+    @Test
+    void actualizarActividad_NullProcesoId() {
+        ActividadDTO updateDTO = new ActividadDTO();
+        updateDTO.setNombre("Updated Actividad");
+
+        when(actividadRepository.findById(actividadId)).thenReturn(Optional.of(actividad));
+        doAnswer(invocation -> null).when(modelMapper).map(updateDTO, actividad);
+        when(actividadRepository.save(actividad)).thenReturn(actividad);
+        when(modelMapper.map(actividad, ActividadDTO.class)).thenReturn(actividadDTO);
+
+        ActividadDTO result = actividadService.actualizarActividad(actividadId, updateDTO);
+
+        assertNotNull(result);
+        verify(procesoService, never()).obtenerEntidad(any());
     }
 
     @Test

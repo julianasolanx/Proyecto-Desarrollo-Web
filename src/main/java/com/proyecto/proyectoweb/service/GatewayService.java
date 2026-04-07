@@ -2,13 +2,11 @@ package com.proyecto.proyectoweb.service;
 
 import com.proyecto.proyectoweb.dto.GatewayDTO;
 import com.proyecto.proyectoweb.entity.Gateway;
-import com.proyecto.proyectoweb.entity.Proceso;
-import com.proyecto.proyectoweb.repository.ArcoRepository;
 import com.proyecto.proyectoweb.repository.GatewayRepository;
-import com.proyecto.proyectoweb.repository.ProcesoRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,17 +17,17 @@ import java.util.List;
 public class GatewayService {
 
     private final GatewayRepository gatewayRepository;
-    private final ArcoRepository arcoRepository;
-    private final ProcesoRepository procesoRepository;
+    private final ArcoService arcoService;
+    private final ProcesoService procesoService;
     private final ModelMapper modelMapper;
 
     public GatewayService(GatewayRepository gatewayRepository,
-                          ArcoRepository arcoRepository,
-                          ProcesoRepository procesoRepository,
+                          @Lazy ArcoService arcoService,
+                          ProcesoService procesoService,
                           ModelMapper modelMapper) {
         this.gatewayRepository = gatewayRepository;
-        this.arcoRepository = arcoRepository;
-        this.procesoRepository = procesoRepository;
+        this.arcoService = arcoService;
+        this.procesoService = procesoService;
         this.modelMapper = modelMapper;
     }
 
@@ -54,13 +52,19 @@ public class GatewayService {
         return modelMapper.map(gateway, GatewayDTO.class);
     }
 
+    public Gateway obtenerEntidad(Long id) {
+        return gatewayRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Gateway no encontrado"));
+    }
+
+    public boolean existenPorProceso(Long procesoId) {
+        return !gatewayRepository.findByProcesoId(procesoId).isEmpty();
+    }
+
     @Transactional
     public GatewayDTO crearGateway(GatewayDTO dto) {
-        Proceso proceso = procesoRepository.findById(dto.getProcesoId())
-                .orElseThrow(() -> new EntityNotFoundException("Proceso no encontrado"));
-
         Gateway gateway = modelMapper.map(dto, Gateway.class);
-        gateway.setProceso(proceso);
+        gateway.setProceso(procesoService.obtenerEntidad(dto.getProcesoId()));
 
         return modelMapper.map(gatewayRepository.save(gateway), GatewayDTO.class);
     }
@@ -74,9 +78,7 @@ public class GatewayService {
         modelMapper.map(dto, gateway);
 
         if (dto.getProcesoId() != null) {
-            Proceso proceso = procesoRepository.findById(dto.getProcesoId())
-                    .orElseThrow(() -> new EntityNotFoundException("Proceso no encontrado"));
-            gateway.setProceso(proceso);
+            gateway.setProceso(procesoService.obtenerEntidad(dto.getProcesoId()));
         }
 
         return modelMapper.map(gatewayRepository.save(gateway), GatewayDTO.class);
@@ -87,9 +89,7 @@ public class GatewayService {
         if (!gatewayRepository.existsById(id)) {
             throw new EntityNotFoundException("Gateway no encontrado");
         }
-        boolean tieneArcos = !arcoRepository.findByGatewayOrigenId(id).isEmpty()
-                || !arcoRepository.findByGatewayDestinoId(id).isEmpty();
-        if (tieneArcos) {
+        if (arcoService.existenArcosPorGateway(id)) {
             throw new IllegalStateException("No se puede eliminar el gateway porque tiene arcos conectados. Elimine primero los arcos asociados.");
         }
         gatewayRepository.deleteById(id);

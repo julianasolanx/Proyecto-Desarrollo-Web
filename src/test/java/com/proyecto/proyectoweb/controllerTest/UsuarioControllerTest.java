@@ -2,7 +2,10 @@ package com.proyecto.proyectoweb.controllerTest;
 
 import com.proyecto.proyectoweb.controller.UsuarioController;
 import com.proyecto.proyectoweb.dto.CrearUsuarioDTO;
+import com.proyecto.proyectoweb.dto.EmailRequestDTO;
+import com.proyecto.proyectoweb.dto.LoginRequestDTO;
 import com.proyecto.proyectoweb.dto.UsuarioDTO;
+import com.proyecto.proyectoweb.service.EmailService;
 import com.proyecto.proyectoweb.service.UsuarioService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -24,6 +27,9 @@ class UsuarioControllerTest {
 
     @Mock
     private UsuarioService usuarioService;
+
+    @Mock
+    private EmailService emailService;
 
     @InjectMocks
     private UsuarioController usuarioController;
@@ -125,6 +131,22 @@ class UsuarioControllerTest {
     }
 
     @Test
+    void login_Success() {
+        LoginRequestDTO loginDTO = new LoginRequestDTO();
+        loginDTO.setCorreo("test@mail.com");
+        loginDTO.setContrasena("pass123");
+
+        when(usuarioService.login("test@mail.com", "pass123")).thenReturn(usuarioDTO);
+
+        ResponseEntity<UsuarioDTO> response = usuarioController.login(loginDTO);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(usuarioDTO.getNombre(), response.getBody().getNombre());
+        verify(usuarioService).login("test@mail.com", "pass123");
+    }
+
+    @Test
     void actualizar_Success() {
         when(usuarioService.actualizarUsuario(eq(usuarioId), any(UsuarioDTO.class))).thenReturn(usuarioDTO);
 
@@ -145,5 +167,21 @@ class UsuarioControllerTest {
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
         assertNull(response.getBody());
         verify(usuarioService).eliminarUsuario(usuarioId);
+    }
+
+    @Test
+    void enviarInvitacion_Success() {
+        EmailRequestDTO emailDTO = new EmailRequestDTO();
+        emailDTO.setTo("dest@mail.com");
+        emailDTO.setSubject("Invitación");
+        emailDTO.setMessage("Bienvenido");
+
+        doNothing().when(emailService).enviarCorreo(anyString(), anyString(), anyString());
+
+        ResponseEntity<String> response = usuarioController.enviarInvitacion(emailDTO);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals("Correo enviado correctamente", response.getBody());
+        verify(emailService).enviarCorreo("dest@mail.com", "Invitación", "Bienvenido");
     }
 }

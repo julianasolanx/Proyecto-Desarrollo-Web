@@ -2,15 +2,12 @@ package com.proyecto.proyectoweb.service;
 
 import com.proyecto.proyectoweb.dto.ActividadDTO;
 import com.proyecto.proyectoweb.entity.Actividad;
-import com.proyecto.proyectoweb.entity.Proceso;
 import com.proyecto.proyectoweb.entity.RolProceso;
 import com.proyecto.proyectoweb.repository.ActividadRepository;
-import com.proyecto.proyectoweb.repository.ArcoRepository;
-import com.proyecto.proyectoweb.repository.ProcesoRepository;
-import com.proyecto.proyectoweb.repository.RolProcesoRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,20 +18,20 @@ import java.util.List;
 public class ActividadService {
 
     private final ActividadRepository actividadRepository;
-    private final ArcoRepository arcoRepository;
-    private final ProcesoRepository procesoRepository;
-    private final RolProcesoRepository rolProcesoRepository;
+    private final ArcoService arcoService;
+    private final ProcesoService procesoService;
+    private final RolProcesoService rolProcesoService;
     private final ModelMapper modelMapper;
 
     public ActividadService(ActividadRepository actividadRepository,
-                            ArcoRepository arcoRepository,
-                            ProcesoRepository procesoRepository,
-                            RolProcesoRepository rolProcesoRepository,
+                            @Lazy ArcoService arcoService,
+                            ProcesoService procesoService,
+                            RolProcesoService rolProcesoService,
                             ModelMapper modelMapper) {
         this.actividadRepository = actividadRepository;
-        this.arcoRepository = arcoRepository;
-        this.procesoRepository = procesoRepository;
-        this.rolProcesoRepository = rolProcesoRepository;
+        this.arcoService = arcoService;
+        this.procesoService = procesoService;
+        this.rolProcesoService = rolProcesoService;
         this.modelMapper = modelMapper;
     }
 
@@ -59,13 +56,23 @@ public class ActividadService {
         return modelMapper.map(actividad, ActividadDTO.class);
     }
 
+    public Actividad obtenerEntidad(Long id) {
+        return actividadRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Actividad no encontrada"));
+    }
+
+    public boolean existenPorProceso(Long procesoId) {
+        return !actividadRepository.findByProcesoId(procesoId).isEmpty();
+    }
+
+    public boolean existePorRolResponsable(Long rolId) {
+        return actividadRepository.existsByRolResponsableId(rolId);
+    }
+
     @Transactional
     public ActividadDTO crearActividad(ActividadDTO dto) {
-        Proceso proceso = procesoRepository.findById(dto.getProcesoId())
-                .orElseThrow(() -> new EntityNotFoundException("Proceso no encontrado"));
-
         Actividad actividad = modelMapper.map(dto, Actividad.class);
-        actividad.setProceso(proceso);
+        actividad.setProceso(procesoService.obtenerEntidad(dto.getProcesoId()));
         actividad.setRolResponsable(resolverRol(dto.getRolResponsableId()));
 
         return modelMapper.map(actividadRepository.save(actividad), ActividadDTO.class);
@@ -80,9 +87,7 @@ public class ActividadService {
         modelMapper.map(dto, actividad);
 
         if (dto.getProcesoId() != null) {
-            Proceso proceso = procesoRepository.findById(dto.getProcesoId())
-                    .orElseThrow(() -> new EntityNotFoundException("Proceso no encontrado"));
-            actividad.setProceso(proceso);
+            actividad.setProceso(procesoService.obtenerEntidad(dto.getProcesoId()));
         }
         actividad.setRolResponsable(resolverRol(dto.getRolResponsableId()));
 
@@ -94,9 +99,7 @@ public class ActividadService {
         if (!actividadRepository.existsById(id)) {
             throw new EntityNotFoundException("Actividad no encontrada");
         }
-        boolean tieneArcos = !arcoRepository.findByActividadOrigenId(id).isEmpty()
-                || !arcoRepository.findByActividadDestinoId(id).isEmpty();
-        if (tieneArcos) {
+        if (arcoService.existenArcosPorActividad(id)) {
             throw new IllegalStateException("No se puede eliminar la actividad porque tiene arcos conectados. Elimine primero los arcos asociados.");
         }
         actividadRepository.deleteById(id);
@@ -104,7 +107,6 @@ public class ActividadService {
 
     private RolProceso resolverRol(Long rolId) {
         if (rolId == null) return null;
-        return rolProcesoRepository.findById(rolId)
-                .orElseThrow(() -> new EntityNotFoundException("Rol no encontrado"));
+        return rolProcesoService.obtenerEntidad(rolId);
     }
 }

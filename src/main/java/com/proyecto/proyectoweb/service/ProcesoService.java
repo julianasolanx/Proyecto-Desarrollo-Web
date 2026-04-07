@@ -3,14 +3,11 @@ package com.proyecto.proyectoweb.service;
 import com.proyecto.proyectoweb.dto.ProcesoDTO;
 import com.proyecto.proyectoweb.entity.Empresa;
 import com.proyecto.proyectoweb.entity.Proceso;
-import com.proyecto.proyectoweb.repository.ActividadRepository;
-import com.proyecto.proyectoweb.repository.ArcoRepository;
-import com.proyecto.proyectoweb.repository.EmpresaRepository;
-import com.proyecto.proyectoweb.repository.GatewayRepository;
 import com.proyecto.proyectoweb.repository.ProcesoRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,23 +18,23 @@ import java.util.List;
 public class ProcesoService {
 
     private final ProcesoRepository procesoRepository;
-    private final EmpresaRepository empresaRepository;
-    private final ActividadRepository actividadRepository;
-    private final GatewayRepository gatewayRepository;
-    private final ArcoRepository arcoRepository;
+    private final EmpresaService empresaService;
+    private final ActividadService actividadService;
+    private final GatewayService gatewayService;
+    private final ArcoService arcoService;
     private final ModelMapper modelMapper;
 
     public ProcesoService(ProcesoRepository procesoRepository,
-                          EmpresaRepository empresaRepository,
-                          ActividadRepository actividadRepository,
-                          GatewayRepository gatewayRepository,
-                          ArcoRepository arcoRepository,
+                          EmpresaService empresaService,
+                          @Lazy ActividadService actividadService,
+                          @Lazy GatewayService gatewayService,
+                          @Lazy ArcoService arcoService,
                           ModelMapper modelMapper) {
         this.procesoRepository = procesoRepository;
-        this.empresaRepository = empresaRepository;
-        this.actividadRepository = actividadRepository;
-        this.gatewayRepository = gatewayRepository;
-        this.arcoRepository = arcoRepository;
+        this.empresaService = empresaService;
+        this.actividadService = actividadService;
+        this.gatewayService = gatewayService;
+        this.arcoService = arcoService;
         this.modelMapper = modelMapper;
     }
 
@@ -69,10 +66,14 @@ public class ProcesoService {
         return modelMapper.map(proceso, ProcesoDTO.class);
     }
 
+    public Proceso obtenerEntidad(Long id) {
+        return procesoRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Proceso no encontrado"));
+    }
+
     @Transactional
     public ProcesoDTO crearProceso(ProcesoDTO dto) {
-        Empresa empresa = empresaRepository.findById(dto.getEmpresaId())
-                .orElseThrow(() -> new EntityNotFoundException("Empresa no encontrada"));
+        Empresa empresa = empresaService.obtenerEntidad(dto.getEmpresaId());
 
         Proceso proceso = modelMapper.map(dto, Proceso.class);
         proceso.setEmpresa(empresa);
@@ -89,9 +90,7 @@ public class ProcesoService {
         modelMapper.map(dto, proceso);
 
         if (dto.getEmpresaId() != null) {
-            Empresa empresa = empresaRepository.findById(dto.getEmpresaId())
-                    .orElseThrow(() -> new EntityNotFoundException("Empresa no encontrada"));
-            proceso.setEmpresa(empresa);
+            proceso.setEmpresa(empresaService.obtenerEntidad(dto.getEmpresaId()));
         }
 
         return modelMapper.map(procesoRepository.save(proceso), ProcesoDTO.class);
@@ -102,10 +101,7 @@ public class ProcesoService {
         if (!procesoRepository.existsById(id)) {
             throw new EntityNotFoundException("Proceso no encontrado");
         }
-        boolean tieneActividades = !actividadRepository.findByProcesoId(id).isEmpty();
-        boolean tieneGateways = !gatewayRepository.findByProcesoId(id).isEmpty();
-        boolean tieneArcos = !arcoRepository.findByProcesoId(id).isEmpty();
-        if (tieneActividades || tieneGateways || tieneArcos) {
+        if (actividadService.existenPorProceso(id) || gatewayService.existenPorProceso(id) || arcoService.existenArcosPorProceso(id)) {
             throw new IllegalStateException(
                 "No se puede eliminar el proceso porque tiene elementos asociados. " +
                 "Elimine primero los arcos, actividades y gateways del proceso.");

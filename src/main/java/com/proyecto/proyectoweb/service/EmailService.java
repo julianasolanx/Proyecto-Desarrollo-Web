@@ -1,11 +1,16 @@
 package com.proyecto.proyectoweb.service;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class EmailService {
@@ -16,11 +21,11 @@ public class EmailService {
     @Value("${mailtrap.token}")
     private String apiToken;
 
+    private final RestTemplate restTemplate = new RestTemplate();
+
     public void enviarCorreo(String to, String subject, String message) {
 
         String url = "https://sandbox.api.mailtrap.io/api/send/" + inboxId;
-
-        RestTemplate restTemplate = new RestTemplate();
 
         Map<String, Object> body = new HashMap<>();
 

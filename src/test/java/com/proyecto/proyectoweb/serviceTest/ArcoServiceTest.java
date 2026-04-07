@@ -1,13 +1,15 @@
 package com.proyecto.proyectoweb.serviceTest;
 
 import com.proyecto.proyectoweb.dto.ArcoDTO;
+import com.proyecto.proyectoweb.entity.Actividad;
 import com.proyecto.proyectoweb.entity.Arco;
+import com.proyecto.proyectoweb.entity.Gateway;
 import com.proyecto.proyectoweb.entity.Proceso;
-import com.proyecto.proyectoweb.repository.ActividadRepository;
 import com.proyecto.proyectoweb.repository.ArcoRepository;
-import com.proyecto.proyectoweb.repository.GatewayRepository;
-import com.proyecto.proyectoweb.repository.ProcesoRepository;
+import com.proyecto.proyectoweb.service.ActividadService;
 import com.proyecto.proyectoweb.service.ArcoService;
+import com.proyecto.proyectoweb.service.GatewayService;
+import com.proyecto.proyectoweb.service.ProcesoService;
 
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,7 +18,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.modelmapper.ModelMapper;
 
 import java.util.Arrays;
 import java.util.List;
@@ -33,16 +34,13 @@ class ArcoServiceTest {
     private ArcoRepository arcoRepository;
 
     @Mock
-    private ProcesoRepository procesoRepository;
+    private ProcesoService procesoService;
 
     @Mock
-    private ActividadRepository actividadRepository;
+    private ActividadService actividadService;
 
     @Mock
-    private GatewayRepository gatewayRepository;
-
-    @Mock
-    private ModelMapper modelMapper;
+    private GatewayService gatewayService;
 
     @InjectMocks
     private ArcoService arcoService;
@@ -70,6 +68,19 @@ class ArcoServiceTest {
         arcoDTO.setId(arcoId);
         arcoDTO.setCondicion("condicion");
         arcoDTO.setProcesoId(procesoId);
+    }
+
+    @Test
+    void listarArcos_Success() {
+        List<Arco> arcos = Arrays.asList(arco);
+
+        when(arcoRepository.findAll()).thenReturn(arcos);
+
+        List<ArcoDTO> result = arcoService.listarArcos();
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        verify(arcoRepository).findAll();
     }
 
     @Test
@@ -105,7 +116,7 @@ class ArcoServiceTest {
 
     @Test
     void crearArco_Success() {
-        when(procesoRepository.findById(procesoId)).thenReturn(Optional.of(proceso));
+        when(procesoService.obtenerEntidad(procesoId)).thenReturn(proceso);
         when(arcoRepository.save(any(Arco.class))).thenReturn(arco);
 
         ArcoDTO result = arcoService.crearArco(arcoDTO);
@@ -117,7 +128,7 @@ class ArcoServiceTest {
 
     @Test
     void crearArco_ProcesoNotFound() {
-        when(procesoRepository.findById(procesoId)).thenReturn(Optional.empty());
+        when(procesoService.obtenerEntidad(procesoId)).thenThrow(new EntityNotFoundException("Proceso no encontrado"));
 
         assertThrows(EntityNotFoundException.class, () ->
             arcoService.crearArco(arcoDTO));
@@ -130,7 +141,7 @@ class ArcoServiceTest {
         updateDTO.setProcesoId(procesoId);
 
         when(arcoRepository.findById(arcoId)).thenReturn(Optional.of(arco));
-        when(procesoRepository.findById(procesoId)).thenReturn(Optional.of(proceso));
+        when(procesoService.obtenerEntidad(procesoId)).thenReturn(proceso);
         when(arcoRepository.save(arco)).thenReturn(arco);
 
         ArcoDTO result = arcoService.actualizarArco(arcoId, updateDTO);
@@ -155,6 +166,42 @@ class ArcoServiceTest {
 
         assertDoesNotThrow(() -> arcoService.eliminarArco(arcoId));
         verify(arcoRepository).deleteById(arcoId);
+    }
+
+    @Test
+    void crearArco_ConActividadOrigen() {
+        Long actividadOrigenId = 2L;
+        Actividad actividadOrigen = new Actividad();
+        actividadOrigen.setId(actividadOrigenId);
+
+        arcoDTO.setActividadOrigenId(actividadOrigenId);
+
+        when(procesoService.obtenerEntidad(procesoId)).thenReturn(proceso);
+        when(actividadService.obtenerEntidad(actividadOrigenId)).thenReturn(actividadOrigen);
+        when(arcoRepository.save(any(Arco.class))).thenReturn(arco);
+
+        ArcoDTO result = arcoService.crearArco(arcoDTO);
+
+        assertNotNull(result);
+        verify(actividadService).obtenerEntidad(actividadOrigenId);
+    }
+
+    @Test
+    void crearArco_ConGatewayOrigen() {
+        Long gatewayOrigenId = 3L;
+        Gateway gateway = new Gateway();
+        gateway.setId(gatewayOrigenId);
+
+        arcoDTO.setGatewayOrigenId(gatewayOrigenId);
+
+        when(procesoService.obtenerEntidad(procesoId)).thenReturn(proceso);
+        when(gatewayService.obtenerEntidad(gatewayOrigenId)).thenReturn(gateway);
+        when(arcoRepository.save(any(Arco.class))).thenReturn(arco);
+
+        ArcoDTO result = arcoService.crearArco(arcoDTO);
+
+        assertNotNull(result);
+        verify(gatewayService).obtenerEntidad(gatewayOrigenId);
     }
 
     @Test

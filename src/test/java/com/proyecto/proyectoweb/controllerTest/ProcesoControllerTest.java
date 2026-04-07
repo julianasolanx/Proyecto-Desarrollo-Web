@@ -93,6 +93,31 @@ class ProcesoControllerTest {
     }
 
     @Test
+    void filtrar_ConFiltros_Success() {
+        List<ProcesoDTO> expectedList = Arrays.asList(procesoDTO);
+        when(procesoService.listarPorEmpresaConFiltros(empresaId, "activo", "ventas")).thenReturn(expectedList);
+
+        ResponseEntity<List<ProcesoDTO>> response = procesoController.filtrar(empresaId, "activo", "ventas");
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(1, response.getBody().size());
+        verify(procesoService).listarPorEmpresaConFiltros(empresaId, "activo", "ventas");
+    }
+
+    @Test
+    void filtrar_SinFiltros_Success() {
+        List<ProcesoDTO> expectedList = Arrays.asList(procesoDTO);
+        when(procesoService.listarPorEmpresaConFiltros(empresaId, null, null)).thenReturn(expectedList);
+
+        ResponseEntity<List<ProcesoDTO>> response = procesoController.filtrar(empresaId, null, null);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        verify(procesoService).listarPorEmpresaConFiltros(empresaId, null, null);
+    }
+
+    @Test
     void obtener_Success() {
         when(procesoService.obtenerProceso(procesoId)).thenReturn(procesoDTO);
 
