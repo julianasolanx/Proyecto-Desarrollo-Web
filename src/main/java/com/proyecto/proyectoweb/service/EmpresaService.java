@@ -2,7 +2,9 @@ package com.proyecto.proyectoweb.service;
 
 import com.proyecto.proyectoweb.dto.EmpresaDTO;
 import com.proyecto.proyectoweb.entity.Empresa;
+import com.proyecto.proyectoweb.entity.Usuario;
 import com.proyecto.proyectoweb.repository.EmpresaRepository;
+import com.proyecto.proyectoweb.repository.UsuarioRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
@@ -15,10 +17,14 @@ import java.util.List;
 public class EmpresaService {
 
     private final EmpresaRepository empresaRepository;
+    private final UsuarioRepository usuarioRepository;
     private final ModelMapper modelMapper;
 
-    public EmpresaService(EmpresaRepository empresaRepository, ModelMapper modelMapper) {
+    public EmpresaService(EmpresaRepository empresaRepository,
+                          UsuarioRepository usuarioRepository,
+                          ModelMapper modelMapper) {
         this.empresaRepository = empresaRepository;
+        this.usuarioRepository = usuarioRepository;
         this.modelMapper = modelMapper;
     }
 
@@ -40,6 +46,15 @@ public class EmpresaService {
     public EmpresaDTO crearEmpresa(EmpresaDTO dto) {
         Empresa empresa = modelMapper.map(dto, Empresa.class);
         Empresa saved = empresaRepository.save(empresa);
+
+        Usuario admin = new Usuario();
+        admin.setNombre("Administrador");
+        admin.setCorreo(dto.getCorreoContacto());
+        admin.setContrasena("admin123");
+        admin.setRol(Usuario.RolUsuario.ADMINISTRADOR);
+        admin.setEmpresa(saved);
+        usuarioRepository.save(admin);
+
         return modelMapper.map(saved, EmpresaDTO.class);
     }
 
@@ -47,6 +62,7 @@ public class EmpresaService {
     public EmpresaDTO actualizarEmpresa(Long id, EmpresaDTO dto) {
         Empresa existing = empresaRepository.findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Empresa no encontrada"));
+        dto.setId(id);
         modelMapper.map(dto, existing);
         Empresa saved = empresaRepository.save(existing);
         return modelMapper.map(saved, EmpresaDTO.class);

@@ -20,6 +20,9 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     @Query(value = "SELECT COUNT(*) > 0 FROM usuarios WHERE correo = :correo", nativeQuery = true)
     boolean existsByCorreo(@Param("correo") String correo);
 
+    @Query("SELECT u FROM Usuario u WHERE u.correo = :correo AND u.contrasena = :contrasena")
+    Optional<Usuario> login(@Param("correo") String correo, @Param("contrasena") String contrasena);
+
     @Modifying
     @Transactional
     @Query("UPDATE Usuario u SET u.rol = :rol WHERE u.id = :id")

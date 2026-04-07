@@ -13,6 +13,11 @@ public interface ArcoRepository extends JpaRepository<Arco, Long> {
     @Query("SELECT a FROM Arco a WHERE a.proceso.id = :procesoId")
     List<Arco> findByProcesoId(@Param("procesoId") Long procesoId);
 
+    List<Arco> findByActividadOrigenId(Long actividadId);
+    List<Arco> findByActividadDestinoId(Long actividadId);
+    List<Arco> findByGatewayOrigenId(Long gatewayId);
+    List<Arco> findByGatewayDestinoId(Long gatewayId);
+
     @Modifying
     @Transactional
     @Query("UPDATE Arco a SET a.condicion = :condicion WHERE a.id = :id")

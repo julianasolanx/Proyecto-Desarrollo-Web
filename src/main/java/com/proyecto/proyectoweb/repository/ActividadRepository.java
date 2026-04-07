@@ -17,4 +17,6 @@ public interface ActividadRepository extends JpaRepository<Actividad, Long> {
     @Transactional
     @Query("UPDATE Actividad a SET a.tipo = :tipo WHERE a.id = :id")
     int updateTipo(@Param("id") Long id, @Param("tipo") String tipo);
+
+    boolean existsByRolResponsableId(Long rolId);
 }
