@@ -23,6 +23,14 @@ public class ProcesoController {
         return ResponseEntity.ok(procesoService.listarPorEmpresa(empresaId));
     }
 
+    @GetMapping("/empresa/{empresaId}/filtrar")
+    public ResponseEntity<List<ProcesoDTO>> filtrar(
+            @PathVariable Long empresaId,
+            @RequestParam(required = false) String estado,
+            @RequestParam(required = false) String categoria) {
+        return ResponseEntity.ok(procesoService.listarPorEmpresaConFiltros(empresaId, estado, categoria));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<ProcesoDTO> obtener(@PathVariable Long id) {
         return ResponseEntity.ok(procesoService.obtenerProceso(id));
