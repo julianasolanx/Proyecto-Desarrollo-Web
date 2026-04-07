@@ -11,11 +11,9 @@ import com.proyecto.proyectoweb.repository.GatewayRepository;
 import com.proyecto.proyectoweb.repository.ProcesoRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
-import org.modelmapper.TypeToken;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.lang.reflect.Type;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -26,8 +24,6 @@ public class ArcoService {
     private final ProcesoRepository procesoRepository;
     private final ActividadRepository actividadRepository;
     private final GatewayRepository gatewayRepository;
-    private final ModelMapper modelMapper;
-
     public ArcoService(ArcoRepository arcoRepository,
                        ProcesoRepository procesoRepository,
                        ActividadRepository actividadRepository,
@@ -37,7 +33,6 @@ public class ArcoService {
         this.procesoRepository = procesoRepository;
         this.actividadRepository = actividadRepository;
         this.gatewayRepository = gatewayRepository;
-        this.modelMapper = modelMapper;
     }
 
     @Transactional(readOnly = true)

@@ -1,22 +1,35 @@
 package com.proyecto.proyectoweb.service;
-import java.lang.reflect.Type;
-import java.util.List;
+
+import com.proyecto.proyectoweb.dto.CrearUsuarioDTO;
+import com.proyecto.proyectoweb.dto.UsuarioDTO;
+import com.proyecto.proyectoweb.entity.Empresa;
+import com.proyecto.proyectoweb.entity.Usuario;
+import com.proyecto.proyectoweb.repository.EmpresaRepository;
+import com.proyecto.proyectoweb.repository.UsuarioRepository;
+import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.proyecto.proyectoweb.dto.UsuarioDTO;
-import com.proyecto.proyectoweb.entity.Usuario;
-import com.proyecto.proyectoweb.repository.UsuarioRepository;
-import jakarta.persistence.EntityNotFoundException;
+
+import java.lang.reflect.Type;
+import java.util.List;
 
 @Service
 public class UsuarioService {
+
     private final UsuarioRepository usuarioRepository;
+    private final EmpresaRepository empresaRepository;
+    private final EmailService emailService;
     private final ModelMapper modelMapper;
 
-    public UsuarioService(UsuarioRepository usuarioRepository, ModelMapper modelMapper) {
+    public UsuarioService(UsuarioRepository usuarioRepository,
+                          EmpresaRepository empresaRepository,
+                          EmailService emailService,
+                          ModelMapper modelMapper) {
         this.usuarioRepository = usuarioRepository;
+        this.empresaRepository = empresaRepository;
+        this.emailService = emailService;
         this.modelMapper = modelMapper;
     }
 
@@ -42,19 +55,40 @@ public class UsuarioService {
     }
 
     @Transactional
-    public UsuarioDTO crearUsuario(UsuarioDTO dto) {
+    public UsuarioDTO crearUsuario(CrearUsuarioDTO dto) {
+        Empresa empresa = empresaRepository.findById(dto.getEmpresaId())
+                .orElseThrow(() -> new EntityNotFoundException("Empresa no encontrada"));
+
         Usuario usuario = modelMapper.map(dto, Usuario.class);
+        usuario.setEmpresa(empresa);
         Usuario saved = usuarioRepository.save(usuario);
+
+        emailService.enviarCorreo(
+            dto.getCorreo(),
+            "Invitación al sistema - " + empresa.getNombre(),
+            "Has sido invitado a la plataforma. Tus credenciales son:\n" +
+            "Correo: " + dto.getCorreo() + "\n" +
+            "Contraseña: " + dto.getContrasena()
+        );
+
         return modelMapper.map(saved, UsuarioDTO.class);
     }
 
     @Transactional
     public UsuarioDTO actualizarUsuario(Long id, UsuarioDTO dto) {
-        Usuario existing = usuarioRepository.findById(id)
+        Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
-        modelMapper.map(dto, existing);
-        Usuario saved = usuarioRepository.save(existing);
-        return modelMapper.map(saved, UsuarioDTO.class);
+
+        dto.setId(id);
+        modelMapper.map(dto, usuario);
+
+        if (dto.getEmpresaId() != null) {
+            Empresa empresa = empresaRepository.findById(dto.getEmpresaId())
+                    .orElseThrow(() -> new EntityNotFoundException("Empresa no encontrada"));
+            usuario.setEmpresa(empresa);
+        }
+
+        return modelMapper.map(usuarioRepository.save(usuario), UsuarioDTO.class);
     }
 
     @Transactional
@@ -66,7 +100,9 @@ public class UsuarioService {
     }
 
     @Transactional(readOnly = true)
-    public boolean login(String correo, String contrasena) {
-        return usuarioRepository.login(correo, contrasena).isPresent();
+    public UsuarioDTO login(String correo, String contrasena) {
+        Usuario usuario = usuarioRepository.login(correo, contrasena)
+                .orElseThrow(() -> new EntityNotFoundException("Credenciales incorrectas"));
+        return modelMapper.map(usuario, UsuarioDTO.class);
     }
 }

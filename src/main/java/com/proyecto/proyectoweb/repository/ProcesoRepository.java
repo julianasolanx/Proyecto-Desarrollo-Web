@@ -13,8 +13,10 @@ public interface ProcesoRepository extends JpaRepository<Proceso, Long> {
     @Query("SELECT p FROM Proceso p WHERE p.empresa.id = :empresaId")
     List<Proceso> findByEmpresaId(@Param("empresaId") Long empresaId);
 
-    @Query("SELECT p FROM Proceso p WHERE p.empresa.id = :empresaId AND p.estado = :estado")
-    List<Proceso> findByEmpresaIdAndEstado(@Param("empresaId") Long empresaId, @Param("estado") String estado);
+    @Query("SELECT p FROM Proceso p WHERE p.empresa.id = :empresaId AND (:estado IS NULL OR CAST(p.estado AS string) = :estado) AND (:categoria IS NULL OR p.categoria = :categoria)")
+    List<Proceso> findByEmpresaIdAndFiltros(@Param("empresaId") Long empresaId,
+                                            @Param("estado") String estado,
+                                            @Param("categoria") String categoria);
 
     @Modifying
     @Transactional
