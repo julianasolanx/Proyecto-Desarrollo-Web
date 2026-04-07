@@ -1,8 +1,12 @@
 package com.proyecto.proyectoweb.serviceTest;
 
+import com.proyecto.proyectoweb.dto.CrearUsuarioDTO;
 import com.proyecto.proyectoweb.dto.UsuarioDTO;
+import com.proyecto.proyectoweb.entity.Empresa;
 import com.proyecto.proyectoweb.entity.Usuario;
+import com.proyecto.proyectoweb.repository.EmpresaRepository;
 import com.proyecto.proyectoweb.repository.UsuarioRepository;
+import com.proyecto.proyectoweb.service.EmailService;
 import com.proyecto.proyectoweb.service.UsuarioService;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -30,6 +34,12 @@ class UsuarioServiceTest {
     private UsuarioRepository usuarioRepository;
 
     @Mock
+    private EmpresaRepository empresaRepository;
+
+    @Mock
+    private EmailService emailService;
+
+    @Mock
     private ModelMapper modelMapper;
 
     @InjectMocks
@@ -37,6 +47,8 @@ class UsuarioServiceTest {
 
     private Usuario usuario;
     private UsuarioDTO usuarioDTO;
+    private CrearUsuarioDTO crearUsuarioDTO;
+    private Empresa empresa;
     private Long empresaId;
     private Long usuarioId;
 
@@ -44,16 +56,26 @@ class UsuarioServiceTest {
     void setUp() {
         empresaId = 1L;
         usuarioId = 1L;
-        
+
+        empresa = new Empresa();
+        empresa.setId(empresaId);
+
         usuario = new Usuario();
         usuario.setId(usuarioId);
         usuario.setNombre("Test Usuario");
         usuario.setCorreo("test@mail.com");
-        
+
         usuarioDTO = new UsuarioDTO();
         usuarioDTO.setId(usuarioId);
         usuarioDTO.setNombre("Test Usuario");
         usuarioDTO.setCorreo("test@mail.com");
+        usuarioDTO.setEmpresaId(empresaId);
+
+        crearUsuarioDTO = new CrearUsuarioDTO();
+        crearUsuarioDTO.setNombre("Test Usuario");
+        crearUsuarioDTO.setCorreo("test@mail.com");
+        crearUsuarioDTO.setContrasena("pass123");
+        crearUsuarioDTO.setEmpresaId(empresaId);
     }
 
     @Test
@@ -87,28 +109,42 @@ class UsuarioServiceTest {
     void obtenerUsuario_NotFound() {
         when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.empty());
 
-        assertThrows(EntityNotFoundException.class, () -> 
+        assertThrows(EntityNotFoundException.class, () ->
             usuarioService.obtenerUsuario(usuarioId));
     }
 
     @Test
     void crearUsuario_Success() {
-        when(modelMapper.map(usuarioDTO, Usuario.class)).thenReturn(usuario);
+        when(empresaRepository.findById(empresaId)).thenReturn(Optional.of(empresa));
+        when(modelMapper.map(crearUsuarioDTO, Usuario.class)).thenReturn(usuario);
         when(usuarioRepository.save(usuario)).thenReturn(usuario);
         when(modelMapper.map(usuario, UsuarioDTO.class)).thenReturn(usuarioDTO);
+        doNothing().when(emailService).enviarCorreo(anyString(), anyString(), anyString());
 
-        UsuarioDTO result = usuarioService.crearUsuario(usuarioDTO);
+        UsuarioDTO result = usuarioService.crearUsuario(crearUsuarioDTO);
 
         assertNotNull(result);
         assertEquals(usuarioDTO.getNombre(), result.getNombre());
+        verify(usuarioRepository).save(usuario);
+        verify(emailService).enviarCorreo(eq(crearUsuarioDTO.getCorreo()), anyString(), anyString());
+    }
+
+    @Test
+    void crearUsuario_EmpresaNotFound() {
+        when(empresaRepository.findById(empresaId)).thenReturn(Optional.empty());
+
+        assertThrows(EntityNotFoundException.class, () ->
+            usuarioService.crearUsuario(crearUsuarioDTO));
     }
 
     @Test
     void actualizarUsuario_Success() {
         UsuarioDTO updateDTO = new UsuarioDTO();
         updateDTO.setNombre("Updated Usuario");
+        updateDTO.setEmpresaId(empresaId);
 
         when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.of(usuario));
+        when(empresaRepository.findById(empresaId)).thenReturn(Optional.of(empresa));
         doAnswer(invocation -> {
             UsuarioDTO source = invocation.getArgument(0);
             Usuario destination = invocation.getArgument(1);
@@ -138,7 +174,7 @@ class UsuarioServiceTest {
     void eliminarUsuario_NotFound() {
         when(usuarioRepository.existsById(usuarioId)).thenReturn(false);
 
-        assertThrows(EntityNotFoundException.class, () -> 
+        assertThrows(EntityNotFoundException.class, () ->
             usuarioService.eliminarUsuario(usuarioId));
     }
 }

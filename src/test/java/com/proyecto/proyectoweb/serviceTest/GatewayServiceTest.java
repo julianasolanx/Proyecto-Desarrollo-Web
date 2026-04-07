@@ -3,7 +3,10 @@ package com.proyecto.proyectoweb.serviceTest;
 import com.proyecto.proyectoweb.dto.GatewayDTO;
 import com.proyecto.proyectoweb.entity.Gateway;
 import com.proyecto.proyectoweb.entity.Gateway.TipoGateway;
+import com.proyecto.proyectoweb.entity.Proceso;
+import com.proyecto.proyectoweb.repository.ArcoRepository;
 import com.proyecto.proyectoweb.repository.GatewayRepository;
+import com.proyecto.proyectoweb.repository.ProcesoRepository;
 import com.proyecto.proyectoweb.service.GatewayService;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -31,6 +34,12 @@ class GatewayServiceTest {
     private GatewayRepository gatewayRepository;
 
     @Mock
+    private ArcoRepository arcoRepository;
+
+    @Mock
+    private ProcesoRepository procesoRepository;
+
+    @Mock
     private ModelMapper modelMapper;
 
     @InjectMocks
@@ -38,6 +47,7 @@ class GatewayServiceTest {
 
     private Gateway gateway;
     private GatewayDTO gatewayDTO;
+    private Proceso proceso;
     private Long procesoId;
     private Long gatewayId;
 
@@ -45,16 +55,20 @@ class GatewayServiceTest {
     void setUp() {
         procesoId = 1L;
         gatewayId = 1L;
-        
+
+        proceso = new Proceso();
+        proceso.setId(procesoId);
+
         gateway = new Gateway();
         gateway.setId(gatewayId);
         gateway.setNombre("Test Gateway");
         gateway.setTipo(TipoGateway.EXCLUSIVO);
-        
+
         gatewayDTO = new GatewayDTO();
         gatewayDTO.setId(gatewayId);
         gatewayDTO.setNombre("Test Gateway");
-        gatewayDTO.setTipo("exclusivo");
+        gatewayDTO.setTipo("EXCLUSIVO");
+        gatewayDTO.setProcesoId(procesoId);
     }
 
     @Test
@@ -88,12 +102,13 @@ class GatewayServiceTest {
     void obtenerGateway_NotFound() {
         when(gatewayRepository.findById(gatewayId)).thenReturn(Optional.empty());
 
-        assertThrows(EntityNotFoundException.class, () -> 
+        assertThrows(EntityNotFoundException.class, () ->
             gatewayService.obtenerGateway(gatewayId));
     }
 
     @Test
     void crearGateway_Success() {
+        when(procesoRepository.findById(procesoId)).thenReturn(Optional.of(proceso));
         when(modelMapper.map(gatewayDTO, Gateway.class)).thenReturn(gateway);
         when(gatewayRepository.save(gateway)).thenReturn(gateway);
         when(modelMapper.map(gateway, GatewayDTO.class)).thenReturn(gatewayDTO);
@@ -105,11 +120,21 @@ class GatewayServiceTest {
     }
 
     @Test
+    void crearGateway_ProcesoNotFound() {
+        when(procesoRepository.findById(procesoId)).thenReturn(Optional.empty());
+
+        assertThrows(EntityNotFoundException.class, () ->
+            gatewayService.crearGateway(gatewayDTO));
+    }
+
+    @Test
     void actualizarGateway_Success() {
         GatewayDTO updateDTO = new GatewayDTO();
         updateDTO.setNombre("Updated Gateway");
+        updateDTO.setProcesoId(procesoId);
 
         when(gatewayRepository.findById(gatewayId)).thenReturn(Optional.of(gateway));
+        when(procesoRepository.findById(procesoId)).thenReturn(Optional.of(proceso));
         doAnswer(invocation -> {
             GatewayDTO source = invocation.getArgument(0);
             Gateway destination = invocation.getArgument(1);
@@ -129,6 +154,8 @@ class GatewayServiceTest {
     @Test
     void eliminarGateway_Success() {
         when(gatewayRepository.existsById(gatewayId)).thenReturn(true);
+        when(arcoRepository.findByGatewayOrigenId(gatewayId)).thenReturn(List.of());
+        when(arcoRepository.findByGatewayDestinoId(gatewayId)).thenReturn(List.of());
         doNothing().when(gatewayRepository).deleteById(gatewayId);
 
         assertDoesNotThrow(() -> gatewayService.eliminarGateway(gatewayId));
@@ -136,10 +163,20 @@ class GatewayServiceTest {
     }
 
     @Test
+    void eliminarGateway_ConArcos_ThrowsConflict() {
+        when(gatewayRepository.existsById(gatewayId)).thenReturn(true);
+        when(arcoRepository.findByGatewayOrigenId(gatewayId)).thenReturn(List.of(new com.proyecto.proyectoweb.entity.Arco()));
+
+        assertThrows(IllegalStateException.class, () ->
+            gatewayService.eliminarGateway(gatewayId));
+        verify(gatewayRepository, never()).deleteById(any());
+    }
+
+    @Test
     void eliminarGateway_NotFound() {
         when(gatewayRepository.existsById(gatewayId)).thenReturn(false);
 
-        assertThrows(EntityNotFoundException.class, () -> 
+        assertThrows(EntityNotFoundException.class, () ->
             gatewayService.eliminarGateway(gatewayId));
     }
 }

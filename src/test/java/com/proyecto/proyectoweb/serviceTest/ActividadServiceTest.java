@@ -3,7 +3,11 @@ package com.proyecto.proyectoweb.serviceTest;
 import com.proyecto.proyectoweb.dto.ActividadDTO;
 import com.proyecto.proyectoweb.entity.Actividad;
 import com.proyecto.proyectoweb.entity.Actividad.TipoActividad;
+import com.proyecto.proyectoweb.entity.Proceso;
 import com.proyecto.proyectoweb.repository.ActividadRepository;
+import com.proyecto.proyectoweb.repository.ArcoRepository;
+import com.proyecto.proyectoweb.repository.ProcesoRepository;
+import com.proyecto.proyectoweb.repository.RolProcesoRepository;
 import com.proyecto.proyectoweb.service.ActividadService;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -32,6 +36,15 @@ class ActividadServiceTest {
     private ActividadRepository actividadRepository;
 
     @Mock
+    private ArcoRepository arcoRepository;
+
+    @Mock
+    private ProcesoRepository procesoRepository;
+
+    @Mock
+    private RolProcesoRepository rolProcesoRepository;
+
+    @Mock
     private ModelMapper modelMapper;
 
     @InjectMocks
@@ -39,6 +52,7 @@ class ActividadServiceTest {
 
     private Actividad actividad;
     private ActividadDTO actividadDTO;
+    private Proceso proceso;
     private Long procesoId;
     private Long actividadId;
 
@@ -46,16 +60,20 @@ class ActividadServiceTest {
     void setUp() {
         procesoId = 1L;
         actividadId = 1L;
-        
+
+        proceso = new Proceso();
+        proceso.setId(procesoId);
+
         actividad = new Actividad();
         actividad.setId(actividadId);
         actividad.setNombre("Test Actividad");
         actividad.setTipo(TipoActividad.TAREA);
-        
+
         actividadDTO = new ActividadDTO();
         actividadDTO.setId(actividadId);
         actividadDTO.setNombre("Test Actividad");
-        actividadDTO.setTipo("tarea");
+        actividadDTO.setTipo("TAREA");
+        actividadDTO.setProcesoId(procesoId);
     }
 
     @Test
@@ -106,12 +124,13 @@ class ActividadServiceTest {
     void obtenerActividad_NotFound() {
         when(actividadRepository.findById(actividadId)).thenReturn(Optional.empty());
 
-        assertThrows(EntityNotFoundException.class, () -> 
+        assertThrows(EntityNotFoundException.class, () ->
             actividadService.obtenerActividad(actividadId));
     }
 
     @Test
     void crearActividad_Success() {
+        when(procesoRepository.findById(procesoId)).thenReturn(Optional.of(proceso));
         when(modelMapper.map(actividadDTO, Actividad.class)).thenReturn(actividad);
         when(actividadRepository.save(actividad)).thenReturn(actividad);
         when(modelMapper.map(actividad, ActividadDTO.class)).thenReturn(actividadDTO);
@@ -124,11 +143,21 @@ class ActividadServiceTest {
     }
 
     @Test
+    void crearActividad_ProcesoNotFound() {
+        when(procesoRepository.findById(procesoId)).thenReturn(Optional.empty());
+
+        assertThrows(EntityNotFoundException.class, () ->
+            actividadService.crearActividad(actividadDTO));
+    }
+
+    @Test
     void actualizarActividad_Success() {
         ActividadDTO updateDTO = new ActividadDTO();
         updateDTO.setNombre("Updated Actividad");
+        updateDTO.setProcesoId(procesoId);
 
         when(actividadRepository.findById(actividadId)).thenReturn(Optional.of(actividad));
+        when(procesoRepository.findById(procesoId)).thenReturn(Optional.of(proceso));
         doAnswer(invocation -> {
             ActividadDTO source = invocation.getArgument(0);
             Actividad destination = invocation.getArgument(1);
@@ -149,13 +178,15 @@ class ActividadServiceTest {
     void actualizarActividad_NotFound() {
         when(actividadRepository.findById(actividadId)).thenReturn(Optional.empty());
 
-        assertThrows(EntityNotFoundException.class, () -> 
+        assertThrows(EntityNotFoundException.class, () ->
             actividadService.actualizarActividad(actividadId, actividadDTO));
     }
 
     @Test
     void eliminarActividad_Success() {
         when(actividadRepository.existsById(actividadId)).thenReturn(true);
+        when(arcoRepository.findByActividadOrigenId(actividadId)).thenReturn(List.of());
+        when(arcoRepository.findByActividadDestinoId(actividadId)).thenReturn(List.of());
         doNothing().when(actividadRepository).deleteById(actividadId);
 
         assertDoesNotThrow(() -> actividadService.eliminarActividad(actividadId));
@@ -163,10 +194,20 @@ class ActividadServiceTest {
     }
 
     @Test
+    void eliminarActividad_ConArcos_ThrowsConflict() {
+        when(actividadRepository.existsById(actividadId)).thenReturn(true);
+        when(arcoRepository.findByActividadOrigenId(actividadId)).thenReturn(List.of(new com.proyecto.proyectoweb.entity.Arco()));
+
+        assertThrows(IllegalStateException.class, () ->
+            actividadService.eliminarActividad(actividadId));
+        verify(actividadRepository, never()).deleteById(any());
+    }
+
+    @Test
     void eliminarActividad_NotFound() {
         when(actividadRepository.existsById(actividadId)).thenReturn(false);
 
-        assertThrows(EntityNotFoundException.class, () -> 
+        assertThrows(EntityNotFoundException.class, () ->
             actividadService.eliminarActividad(actividadId));
         verify(actividadRepository, never()).deleteById(any());
     }

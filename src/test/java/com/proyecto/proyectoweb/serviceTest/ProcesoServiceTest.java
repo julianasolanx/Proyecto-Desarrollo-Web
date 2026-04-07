@@ -1,7 +1,12 @@
 package com.proyecto.proyectoweb.serviceTest;
 
 import com.proyecto.proyectoweb.dto.ProcesoDTO;
+import com.proyecto.proyectoweb.entity.Empresa;
 import com.proyecto.proyectoweb.entity.Proceso;
+import com.proyecto.proyectoweb.repository.ActividadRepository;
+import com.proyecto.proyectoweb.repository.ArcoRepository;
+import com.proyecto.proyectoweb.repository.EmpresaRepository;
+import com.proyecto.proyectoweb.repository.GatewayRepository;
 import com.proyecto.proyectoweb.repository.ProcesoRepository;
 import com.proyecto.proyectoweb.service.ProcesoService;
 
@@ -30,6 +35,18 @@ class ProcesoServiceTest {
     private ProcesoRepository procesoRepository;
 
     @Mock
+    private EmpresaRepository empresaRepository;
+
+    @Mock
+    private ActividadRepository actividadRepository;
+
+    @Mock
+    private GatewayRepository gatewayRepository;
+
+    @Mock
+    private ArcoRepository arcoRepository;
+
+    @Mock
     private ModelMapper modelMapper;
 
     @InjectMocks
@@ -37,6 +54,7 @@ class ProcesoServiceTest {
 
     private Proceso proceso;
     private ProcesoDTO procesoDTO;
+    private Empresa empresa;
     private Long empresaId;
     private Long procesoId;
 
@@ -44,16 +62,20 @@ class ProcesoServiceTest {
     void setUp() {
         empresaId = 1L;
         procesoId = 1L;
-        
+
+        empresa = new Empresa();
+        empresa.setId(empresaId);
+
         proceso = new Proceso();
         proceso.setId(procesoId);
         proceso.setNombre("Test Proceso");
         proceso.setDescripcion("Descripción del proceso");
-        
+
         procesoDTO = new ProcesoDTO();
         procesoDTO.setId(procesoId);
         procesoDTO.setNombre("Test Proceso");
         procesoDTO.setDescripcion("Descripción del proceso");
+        procesoDTO.setEmpresaId(empresaId);
     }
 
     @Test
@@ -93,6 +115,7 @@ class ProcesoServiceTest {
 
     @Test
     void crearProceso_Success() {
+        when(empresaRepository.findById(empresaId)).thenReturn(Optional.of(empresa));
         when(modelMapper.map(procesoDTO, Proceso.class)).thenReturn(proceso);
         when(procesoRepository.save(proceso)).thenReturn(proceso);
         when(modelMapper.map(proceso, ProcesoDTO.class)).thenReturn(procesoDTO);
@@ -128,6 +151,9 @@ class ProcesoServiceTest {
     @Test
     void eliminarProceso_Success() {
         when(procesoRepository.existsById(procesoId)).thenReturn(true);
+        when(actividadRepository.findByProcesoId(procesoId)).thenReturn(List.of());
+        when(gatewayRepository.findByProcesoId(procesoId)).thenReturn(List.of());
+        when(arcoRepository.findByProcesoId(procesoId)).thenReturn(List.of());
         doNothing().when(procesoRepository).deleteById(procesoId);
 
         assertDoesNotThrow(() -> procesoService.eliminarProceso(procesoId));
@@ -135,10 +161,20 @@ class ProcesoServiceTest {
     }
 
     @Test
+    void eliminarProceso_ConElementos_ThrowsConflict() {
+        when(procesoRepository.existsById(procesoId)).thenReturn(true);
+        when(actividadRepository.findByProcesoId(procesoId)).thenReturn(List.of(new com.proyecto.proyectoweb.entity.Actividad()));
+
+        assertThrows(IllegalStateException.class, () ->
+            procesoService.eliminarProceso(procesoId));
+        verify(procesoRepository, never()).deleteById(any());
+    }
+
+    @Test
     void eliminarProceso_NotFound() {
         when(procesoRepository.existsById(procesoId)).thenReturn(false);
 
-        assertThrows(EntityNotFoundException.class, () -> 
+        assertThrows(EntityNotFoundException.class, () ->
             procesoService.eliminarProceso(procesoId));
     }
 }

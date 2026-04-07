@@ -1,7 +1,10 @@
 package com.proyecto.proyectoweb.serviceTest;
 
 import com.proyecto.proyectoweb.dto.RolProcesoDTO;
+import com.proyecto.proyectoweb.entity.Empresa;
 import com.proyecto.proyectoweb.entity.RolProceso;
+import com.proyecto.proyectoweb.repository.ActividadRepository;
+import com.proyecto.proyectoweb.repository.EmpresaRepository;
 import com.proyecto.proyectoweb.repository.RolProcesoRepository;
 import com.proyecto.proyectoweb.service.RolProcesoService;
 
@@ -30,6 +33,12 @@ class RolProcesoServiceTest {
     private RolProcesoRepository rolProcesoRepository;
 
     @Mock
+    private EmpresaRepository empresaRepository;
+
+    @Mock
+    private ActividadRepository actividadRepository;
+
+    @Mock
     private ModelMapper modelMapper;
 
     @InjectMocks
@@ -37,6 +46,7 @@ class RolProcesoServiceTest {
 
     private RolProceso rolProceso;
     private RolProcesoDTO rolProcesoDTO;
+    private Empresa empresa;
     private Long empresaId;
     private Long rolId;
 
@@ -44,16 +54,20 @@ class RolProcesoServiceTest {
     void setUp() {
         empresaId = 1L;
         rolId = 1L;
-        
+
+        empresa = new Empresa();
+        empresa.setId(empresaId);
+
         rolProceso = new RolProceso();
         rolProceso.setId(rolId);
         rolProceso.setNombre("Test Rol");
         rolProceso.setDescripcion("Descripción del rol");
-        
+
         rolProcesoDTO = new RolProcesoDTO();
         rolProcesoDTO.setId(rolId);
         rolProcesoDTO.setNombre("Test Rol");
         rolProcesoDTO.setDescripcion("Descripción del rol");
+        rolProcesoDTO.setEmpresaId(empresaId);
     }
 
     @Test
@@ -87,12 +101,13 @@ class RolProcesoServiceTest {
     void obtenerRol_NotFound() {
         when(rolProcesoRepository.findById(rolId)).thenReturn(Optional.empty());
 
-        assertThrows(EntityNotFoundException.class, () -> 
+        assertThrows(EntityNotFoundException.class, () ->
             rolProcesoService.obtenerRol(rolId));
     }
 
     @Test
     void crearRol_Success() {
+        when(empresaRepository.findById(empresaId)).thenReturn(Optional.of(empresa));
         when(modelMapper.map(rolProcesoDTO, RolProceso.class)).thenReturn(rolProceso);
         when(rolProcesoRepository.save(rolProceso)).thenReturn(rolProceso);
         when(modelMapper.map(rolProceso, RolProcesoDTO.class)).thenReturn(rolProcesoDTO);
@@ -104,11 +119,21 @@ class RolProcesoServiceTest {
     }
 
     @Test
+    void crearRol_EmpresaNotFound() {
+        when(empresaRepository.findById(empresaId)).thenReturn(Optional.empty());
+
+        assertThrows(EntityNotFoundException.class, () ->
+            rolProcesoService.crearRol(rolProcesoDTO));
+    }
+
+    @Test
     void actualizarRol_Success() {
         RolProcesoDTO updateDTO = new RolProcesoDTO();
         updateDTO.setNombre("Updated Rol");
+        updateDTO.setEmpresaId(empresaId);
 
         when(rolProcesoRepository.findById(rolId)).thenReturn(Optional.of(rolProceso));
+        when(empresaRepository.findById(empresaId)).thenReturn(Optional.of(empresa));
         doAnswer(invocation -> {
             RolProcesoDTO source = invocation.getArgument(0);
             RolProceso destination = invocation.getArgument(1);
@@ -128,6 +153,7 @@ class RolProcesoServiceTest {
     @Test
     void eliminarRol_Success() {
         when(rolProcesoRepository.existsById(rolId)).thenReturn(true);
+        when(actividadRepository.existsByRolResponsableId(rolId)).thenReturn(false);
         doNothing().when(rolProcesoRepository).deleteById(rolId);
 
         assertDoesNotThrow(() -> rolProcesoService.eliminarRol(rolId));
@@ -135,10 +161,20 @@ class RolProcesoServiceTest {
     }
 
     @Test
+    void eliminarRol_EnUso() {
+        when(rolProcesoRepository.existsById(rolId)).thenReturn(true);
+        when(actividadRepository.existsByRolResponsableId(rolId)).thenReturn(true);
+
+        assertThrows(IllegalStateException.class, () ->
+            rolProcesoService.eliminarRol(rolId));
+        verify(rolProcesoRepository, never()).deleteById(any());
+    }
+
+    @Test
     void eliminarRol_NotFound() {
         when(rolProcesoRepository.existsById(rolId)).thenReturn(false);
 
-        assertThrows(EntityNotFoundException.class, () -> 
+        assertThrows(EntityNotFoundException.class, () ->
             rolProcesoService.eliminarRol(rolId));
     }
 }

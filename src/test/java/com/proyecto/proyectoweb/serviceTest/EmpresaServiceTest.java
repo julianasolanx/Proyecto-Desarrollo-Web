@@ -2,7 +2,9 @@ package com.proyecto.proyectoweb.serviceTest;
 
 import com.proyecto.proyectoweb.dto.EmpresaDTO;
 import com.proyecto.proyectoweb.entity.Empresa;
+import com.proyecto.proyectoweb.entity.Usuario;
 import com.proyecto.proyectoweb.repository.EmpresaRepository;
+import com.proyecto.proyectoweb.repository.UsuarioRepository;
 import com.proyecto.proyectoweb.service.EmpresaService;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -29,6 +31,9 @@ class EmpresaServiceTest {
 
     @Mock
     private EmpresaRepository empresaRepository;
+
+    @Mock
+    private UsuarioRepository usuarioRepository;
 
     @Mock
     private ModelMapper modelMapper;
@@ -109,6 +114,7 @@ class EmpresaServiceTest {
     void crearEmpresa_Success() {
         when(modelMapper.map(empresaDTO, Empresa.class)).thenReturn(empresa);
         when(empresaRepository.save(empresa)).thenReturn(empresa);
+        when(usuarioRepository.save(any(Usuario.class))).thenReturn(new Usuario());
         when(modelMapper.map(empresa, EmpresaDTO.class)).thenReturn(empresaDTO);
 
         EmpresaDTO result = empresaService.crearEmpresa(empresaDTO);
@@ -116,6 +122,7 @@ class EmpresaServiceTest {
         assertNotNull(result);
         assertEquals(empresaDTO.getNombre(), result.getNombre());
         verify(empresaRepository).save(empresa);
+        verify(usuarioRepository).save(any(Usuario.class));
     }
 
     @Test

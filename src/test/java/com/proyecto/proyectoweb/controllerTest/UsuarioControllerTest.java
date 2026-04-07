@@ -1,6 +1,7 @@
 package com.proyecto.proyectoweb.controllerTest;
 
 import com.proyecto.proyectoweb.controller.UsuarioController;
+import com.proyecto.proyectoweb.dto.CrearUsuarioDTO;
 import com.proyecto.proyectoweb.dto.UsuarioDTO;
 import com.proyecto.proyectoweb.service.UsuarioService;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,6 +29,7 @@ class UsuarioControllerTest {
     private UsuarioController usuarioController;
 
     private UsuarioDTO usuarioDTO;
+    private CrearUsuarioDTO crearUsuarioDTO;
     private Long empresaId;
     private Long usuarioId;
 
@@ -38,6 +40,12 @@ class UsuarioControllerTest {
         usuarioDTO = new UsuarioDTO();
         usuarioDTO.setId(usuarioId);
         usuarioDTO.setNombre("Test Usuario");
+
+        crearUsuarioDTO = new CrearUsuarioDTO();
+        crearUsuarioDTO.setNombre("Test Usuario");
+        crearUsuarioDTO.setCorreo("test@mail.com");
+        crearUsuarioDTO.setContrasena("pass123");
+        crearUsuarioDTO.setEmpresaId(1L);
     }
 
     @Test
@@ -106,14 +114,14 @@ class UsuarioControllerTest {
 
     @Test
     void crear_Success() {
-        when(usuarioService.crearUsuario(any(UsuarioDTO.class))).thenReturn(usuarioDTO);
+        when(usuarioService.crearUsuario(any(CrearUsuarioDTO.class))).thenReturn(usuarioDTO);
 
-        ResponseEntity<UsuarioDTO> response = usuarioController.crear(usuarioDTO);
+        ResponseEntity<UsuarioDTO> response = usuarioController.crear(crearUsuarioDTO);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals(usuarioDTO.getNombre(), response.getBody().getNombre());
-        verify(usuarioService).crearUsuario(usuarioDTO);
+        verify(usuarioService).crearUsuario(crearUsuarioDTO);
     }
 
     @Test
