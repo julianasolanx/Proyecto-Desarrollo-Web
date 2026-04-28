@@ -22,6 +22,7 @@ public class ProcesoService {
     private final ActividadService actividadService;
     private final GatewayService gatewayService;
     private final ArcoService arcoService;
+    private final HistorialCambioService historialCambioService;
     private final ModelMapper modelMapper;
 
     public ProcesoService(ProcesoRepository procesoRepository,
@@ -29,12 +30,14 @@ public class ProcesoService {
                           @Lazy ActividadService actividadService,
                           @Lazy GatewayService gatewayService,
                           @Lazy ArcoService arcoService,
+                          HistorialCambioService historialCambioService,
                           ModelMapper modelMapper) {
         this.procesoRepository = procesoRepository;
         this.empresaService = empresaService;
         this.actividadService = actividadService;
         this.gatewayService = gatewayService;
         this.arcoService = arcoService;
+        this.historialCambioService = historialCambioService;
         this.modelMapper = modelMapper;
     }
 
@@ -86,6 +89,11 @@ public class ProcesoService {
         Proceso proceso = procesoRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Proceso no encontrado"));
 
+        String nombreAnterior = proceso.getNombre();
+        String descAnterior = proceso.getDescripcion();
+        String catAnterior = proceso.getCategoria();
+        String estadoAnterior = proceso.getEstado() != null ? proceso.getEstado().name() : null;
+
         dto.setId(id);
         modelMapper.map(dto, proceso);
 
@@ -93,7 +101,14 @@ public class ProcesoService {
             proceso.setEmpresa(empresaService.obtenerEntidad(dto.getEmpresaId()));
         }
 
-        return modelMapper.map(procesoRepository.save(proceso), ProcesoDTO.class);
+        Proceso saved = procesoRepository.save(proceso);
+
+        historialCambioService.registrarSiCambio("PROCESO", id, "nombre", nombreAnterior, dto.getNombre(), saved);
+        historialCambioService.registrarSiCambio("PROCESO", id, "descripcion", descAnterior, dto.getDescripcion(), saved);
+        historialCambioService.registrarSiCambio("PROCESO", id, "categoria", catAnterior, dto.getCategoria(), saved);
+        historialCambioService.registrarSiCambio("PROCESO", id, "estado", estadoAnterior, dto.getEstado(), saved);
+
+        return modelMapper.map(saved, ProcesoDTO.class);
     }
 
     @Transactional

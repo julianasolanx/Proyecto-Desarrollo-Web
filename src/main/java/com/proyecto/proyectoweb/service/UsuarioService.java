@@ -7,12 +7,10 @@ import com.proyecto.proyectoweb.entity.Usuario;
 import com.proyecto.proyectoweb.repository.UsuarioRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
-import org.modelmapper.TypeToken;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.lang.reflect.Type;
 import java.util.List;
 
 @Service
@@ -32,23 +30,18 @@ public class UsuarioService {
 
     @Transactional(readOnly = true)
     public List<UsuarioDTO> listarUsuarios() {
-        List<Usuario> usuarios = usuarioRepository.findAll();
-        Type listType = new TypeToken<List<UsuarioDTO>>() {}.getType();
-        return modelMapper.map(usuarios, listType);
+        return usuarioRepository.findAll().stream().map(this::toDTO).toList();
     }
 
     @Transactional(readOnly = true)
     public List<UsuarioDTO> listarPorEmpresa(Long empresaId) {
-        List<Usuario> usuarios = usuarioRepository.findByEmpresaId(empresaId);
-        Type listType = new TypeToken<List<UsuarioDTO>>() {}.getType();
-        return modelMapper.map(usuarios, listType);
+        return usuarioRepository.findByEmpresaId(empresaId).stream().map(this::toDTO).toList();
     }
 
     @Transactional(readOnly = true)
     public UsuarioDTO obtenerUsuario(Long id) {
-        Usuario usuario = usuarioRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
-        return modelMapper.map(usuario, UsuarioDTO.class);
+        return toDTO(usuarioRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado")));
     }
 
     @Transactional
@@ -63,7 +56,7 @@ public class UsuarioService {
             usuario.setEmpresa(empresaService.obtenerEntidad(dto.getEmpresaId()));
         }
 
-        return modelMapper.map(usuarioRepository.save(usuario), UsuarioDTO.class);
+        return toDTO(usuarioRepository.save(usuario));
     }
 
     @Transactional
@@ -76,7 +69,7 @@ public class UsuarioService {
 
         // empresaId removido del DTO; la empresa no se modifica al actualizar usuario
 
-        return modelMapper.map(usuarioRepository.save(usuario), UsuarioDTO.class);
+        return toDTO(usuarioRepository.save(usuario));
     }
 
     @Transactional
@@ -99,8 +92,15 @@ public class UsuarioService {
 
     @Transactional(readOnly = true)
     public UsuarioDTO login(String correo, String contrasena) {
-        Usuario usuario = usuarioRepository.login(correo, contrasena)
-                .orElseThrow(() -> new EntityNotFoundException("Credenciales incorrectas"));
-        return modelMapper.map(usuario, UsuarioDTO.class);
+        return toDTO(usuarioRepository.login(correo, contrasena)
+                .orElseThrow(() -> new EntityNotFoundException("Credenciales incorrectas")));
+    }
+
+    private UsuarioDTO toDTO(Usuario usuario) {
+        UsuarioDTO dto = modelMapper.map(usuario, UsuarioDTO.class);
+        if (usuario.getEmpresa() != null) {
+            dto.setEmpresaId(usuario.getEmpresa().getId());
+        }
+        return dto;
     }
 }

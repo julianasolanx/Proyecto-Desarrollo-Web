@@ -5,12 +5,10 @@ import com.proyecto.proyectoweb.entity.RolProceso;
 import com.proyecto.proyectoweb.repository.RolProcesoRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
-import org.modelmapper.TypeToken;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.lang.reflect.Type;
 import java.util.List;
 
 @Service
@@ -33,23 +31,18 @@ public class RolProcesoService {
 
     @Transactional(readOnly = true)
     public List<RolProcesoDTO> listarRoles() {
-        List<RolProceso> roles = rolProcesoRepository.findAll();
-        Type listType = new TypeToken<List<RolProcesoDTO>>() {}.getType();
-        return modelMapper.map(roles, listType);
+        return rolProcesoRepository.findAll().stream().map(this::toDTO).toList();
     }
 
     @Transactional(readOnly = true)
     public List<RolProcesoDTO> listarPorEmpresa(Long empresaId) {
-        List<RolProceso> roles = rolProcesoRepository.findByEmpresaId(empresaId);
-        Type listType = new TypeToken<List<RolProcesoDTO>>() {}.getType();
-        return modelMapper.map(roles, listType);
+        return rolProcesoRepository.findByEmpresaId(empresaId).stream().map(this::toDTO).toList();
     }
 
     @Transactional(readOnly = true)
     public RolProcesoDTO obtenerRol(Long id) {
-        RolProceso rol = rolProcesoRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Rol no encontrado"));
-        return modelMapper.map(rol, RolProcesoDTO.class);
+        return toDTO(rolProcesoRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Rol no encontrado")));
     }
 
     public RolProceso obtenerEntidad(Long id) {
@@ -62,7 +55,7 @@ public class RolProcesoService {
         RolProceso rol = modelMapper.map(dto, RolProceso.class);
         rol.setEmpresa(empresaService.obtenerEntidad(dto.getEmpresaId()));
 
-        return modelMapper.map(rolProcesoRepository.save(rol), RolProcesoDTO.class);
+        return toDTO(rolProcesoRepository.save(rol));
     }
 
     @Transactional
@@ -77,7 +70,7 @@ public class RolProcesoService {
             rol.setEmpresa(empresaService.obtenerEntidad(dto.getEmpresaId()));
         }
 
-        return modelMapper.map(rolProcesoRepository.save(rol), RolProcesoDTO.class);
+        return toDTO(rolProcesoRepository.save(rol));
     }
 
     @Transactional
@@ -89,5 +82,15 @@ public class RolProcesoService {
             throw new IllegalStateException("No se puede eliminar el rol porque está asignado a una o más actividades");
         }
         rolProcesoRepository.deleteById(id);
+    }
+
+    private RolProcesoDTO toDTO(RolProceso rol) {
+        RolProcesoDTO dto = modelMapper.map(rol, RolProcesoDTO.class);
+        if (rol.getActividades() != null) {
+            dto.setActividadIds(rol.getActividades().stream()
+                    .map(a -> a.getId())
+                    .toList());
+        }
+        return dto;
     }
 }

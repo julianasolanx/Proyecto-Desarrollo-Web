@@ -2,6 +2,7 @@ package com.proyecto.proyectoweb.service;
 
 import com.proyecto.proyectoweb.dto.ActividadDTO;
 import com.proyecto.proyectoweb.entity.Actividad;
+import com.proyecto.proyectoweb.entity.Proceso;
 import com.proyecto.proyectoweb.entity.RolProceso;
 import com.proyecto.proyectoweb.repository.ActividadRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -21,17 +22,20 @@ public class ActividadService {
     private final ArcoService arcoService;
     private final ProcesoService procesoService;
     private final RolProcesoService rolProcesoService;
+    private final HistorialCambioService historialCambioService;
     private final ModelMapper modelMapper;
 
     public ActividadService(ActividadRepository actividadRepository,
                             @Lazy ArcoService arcoService,
                             ProcesoService procesoService,
                             RolProcesoService rolProcesoService,
+                            HistorialCambioService historialCambioService,
                             ModelMapper modelMapper) {
         this.actividadRepository = actividadRepository;
         this.arcoService = arcoService;
         this.procesoService = procesoService;
         this.rolProcesoService = rolProcesoService;
+        this.historialCambioService = historialCambioService;
         this.modelMapper = modelMapper;
     }
 
@@ -83,6 +87,13 @@ public class ActividadService {
         Actividad actividad = actividadRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Actividad no encontrada"));
 
+        String nombreAnterior = actividad.getNombre();
+        String descAnterior = actividad.getDescripcion();
+        String tipoAnterior = actividad.getTipo() != null ? actividad.getTipo().name() : null;
+        String rolAnterior = actividad.getRolResponsable() != null
+                ? actividad.getRolResponsable().getId().toString() : null;
+        Proceso proceso = actividad.getProceso();
+
         dto.setId(id);
         modelMapper.map(dto, actividad);
 
@@ -91,7 +102,15 @@ public class ActividadService {
         }
         actividad.setRolResponsable(resolverRol(dto.getRolResponsableId()));
 
-        return modelMapper.map(actividadRepository.save(actividad), ActividadDTO.class);
+        Actividad saved = actividadRepository.save(actividad);
+
+        String rolNuevo = dto.getRolResponsableId() != null ? dto.getRolResponsableId().toString() : null;
+        historialCambioService.registrarSiCambio("ACTIVIDAD", id, "nombre", nombreAnterior, dto.getNombre(), proceso);
+        historialCambioService.registrarSiCambio("ACTIVIDAD", id, "descripcion", descAnterior, dto.getDescripcion(), proceso);
+        historialCambioService.registrarSiCambio("ACTIVIDAD", id, "tipo", tipoAnterior, dto.getTipo(), proceso);
+        historialCambioService.registrarSiCambio("ACTIVIDAD", id, "rolResponsable", rolAnterior, rolNuevo, proceso);
+
+        return modelMapper.map(saved, ActividadDTO.class);
     }
 
     @Transactional
