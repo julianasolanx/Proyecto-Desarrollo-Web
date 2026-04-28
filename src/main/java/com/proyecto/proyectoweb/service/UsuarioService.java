@@ -20,16 +20,13 @@ public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
     private final EmpresaService empresaService;
-    private final EmailService emailService;
     private final ModelMapper modelMapper;
 
     public UsuarioService(UsuarioRepository usuarioRepository,
                           @Lazy EmpresaService empresaService,
-                          EmailService emailService,
                           ModelMapper modelMapper) {
         this.usuarioRepository = usuarioRepository;
         this.empresaService = empresaService;
-        this.emailService = emailService;
         this.modelMapper = modelMapper;
     }
 
@@ -56,21 +53,17 @@ public class UsuarioService {
 
     @Transactional
     public UsuarioDTO crearUsuario(CrearUsuarioDTO dto) {
-        Empresa empresa = empresaService.obtenerEntidad(dto.getEmpresaId());
+        if (usuarioRepository.findByCorreo(dto.getCorreo()).isPresent()) {
+            throw new IllegalStateException("El correo ya está registrado");
+        }
 
         Usuario usuario = modelMapper.map(dto, Usuario.class);
-        usuario.setEmpresa(empresa);
-        Usuario saved = usuarioRepository.save(usuario);
 
-        emailService.enviarCorreo(
-            dto.getCorreo(),
-            "Invitación al sistema - " + empresa.getNombre(),
-            "Has sido invitado a la plataforma. Tus credenciales son:\n" +
-            "Correo: " + dto.getCorreo() + "\n" +
-            "Contraseña: " + dto.getContrasena()
-        );
+        if (dto.getEmpresaId() != null) {
+            usuario.setEmpresa(empresaService.obtenerEntidad(dto.getEmpresaId()));
+        }
 
-        return modelMapper.map(saved, UsuarioDTO.class);
+        return modelMapper.map(usuarioRepository.save(usuario), UsuarioDTO.class);
     }
 
     @Transactional
@@ -81,9 +74,7 @@ public class UsuarioService {
         dto.setId(id);
         modelMapper.map(dto, usuario);
 
-        if (dto.getEmpresaId() != null) {
-            usuario.setEmpresa(empresaService.obtenerEntidad(dto.getEmpresaId()));
-        }
+        // empresaId removido del DTO; la empresa no se modifica al actualizar usuario
 
         return modelMapper.map(usuarioRepository.save(usuario), UsuarioDTO.class);
     }

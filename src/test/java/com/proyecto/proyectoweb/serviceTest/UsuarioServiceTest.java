@@ -5,7 +5,6 @@ import com.proyecto.proyectoweb.dto.UsuarioDTO;
 import com.proyecto.proyectoweb.entity.Empresa;
 import com.proyecto.proyectoweb.entity.Usuario;
 import com.proyecto.proyectoweb.repository.UsuarioRepository;
-import com.proyecto.proyectoweb.service.EmailService;
 import com.proyecto.proyectoweb.service.EmpresaService;
 import com.proyecto.proyectoweb.service.UsuarioService;
 
@@ -35,9 +34,6 @@ class UsuarioServiceTest {
 
     @Mock
     private EmpresaService empresaService;
-
-    @Mock
-    private EmailService emailService;
 
     @Mock
     private ModelMapper modelMapper;
@@ -70,7 +66,6 @@ class UsuarioServiceTest {
         usuarioDTO.setId(usuarioId);
         usuarioDTO.setNombre("Test Usuario");
         usuarioDTO.setCorreo("test@mail.com");
-        usuarioDTO.setEmpresaId(empresaId);
 
         crearUsuarioDTO = new CrearUsuarioDTO();
         crearUsuarioDTO.setNombre("Test Usuario");
@@ -136,14 +131,12 @@ class UsuarioServiceTest {
         when(modelMapper.map(crearUsuarioDTO, Usuario.class)).thenReturn(usuario);
         when(usuarioRepository.save(usuario)).thenReturn(usuario);
         when(modelMapper.map(usuario, UsuarioDTO.class)).thenReturn(usuarioDTO);
-        doNothing().when(emailService).enviarCorreo(anyString(), anyString(), anyString());
 
         UsuarioDTO result = usuarioService.crearUsuario(crearUsuarioDTO);
 
         assertNotNull(result);
         assertEquals(usuarioDTO.getNombre(), result.getNombre());
         verify(usuarioRepository).save(usuario);
-        verify(emailService).enviarCorreo(eq(crearUsuarioDTO.getCorreo()), anyString(), anyString());
     }
 
     @Test
@@ -158,10 +151,8 @@ class UsuarioServiceTest {
     void actualizarUsuario_Success() {
         UsuarioDTO updateDTO = new UsuarioDTO();
         updateDTO.setNombre("Updated Usuario");
-        updateDTO.setEmpresaId(empresaId);
 
         when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.of(usuario));
-        when(empresaService.obtenerEntidad(empresaId)).thenReturn(empresa);
         doAnswer(invocation -> {
             UsuarioDTO source = invocation.getArgument(0);
             Usuario destination = invocation.getArgument(1);

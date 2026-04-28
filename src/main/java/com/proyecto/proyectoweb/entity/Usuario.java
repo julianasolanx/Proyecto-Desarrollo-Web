@@ -37,7 +37,7 @@ public class Usuario {
     private Integer status = 0;
 
     @ManyToOne
-    @JoinColumn(name = "empresa_id", nullable = false)
+    @JoinColumn(name = "empresa_id", nullable = true)
     private Empresa empresa;
 
     public enum RolUsuario {

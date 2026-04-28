@@ -36,22 +36,4 @@ spec:
     - protocol: TCP
       port: 8080
       targetPort: 8080
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: proyecto
-  namespace: grupo22
-spec:
-  ingressClassName: public
-  rules:
-    - host: grupo22.inphotech.co
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: proyecto
-                port:
-                  number: 8080
+  type: ClusterIP
