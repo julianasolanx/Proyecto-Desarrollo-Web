@@ -37,7 +37,7 @@ public class UsuarioController {
         return ResponseEntity.ok(usuarioService.listarPorEmpresa(empresaId));
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/{id:\\d+}")
     public ResponseEntity<UsuarioDTO> obtener(@PathVariable Long id) {
         return ResponseEntity.ok(usuarioService.obtenerUsuario(id));
     }
