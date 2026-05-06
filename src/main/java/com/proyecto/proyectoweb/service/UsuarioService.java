@@ -11,7 +11,11 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.UUID;
 
 @Service
 public class UsuarioService {
@@ -102,5 +106,43 @@ public class UsuarioService {
             dto.setEmpresaId(usuario.getEmpresa().getId());
         }
         return dto;
+    }
+
+
+
+    @Transactional
+    public Map<String, Object> invitarUsuario(CrearUsuarioDTO dto) {
+        if (usuarioRepository.findByCorreo(dto.getCorreo()).isPresent()) {
+            throw new IllegalStateException("El correo ya está registrado");
+        }
+
+        String contrasenaGenerada = generarContrasenaAleatoria();
+
+        Usuario usuario = new Usuario();
+        usuario.setNombre("Usuario_" + UUID.randomUUID().toString().substring(0, 6));
+        usuario.setCorreo(dto.getCorreo());
+        usuario.setContrasena(contrasenaGenerada);
+        usuario.setRol(Usuario.RolUsuario.valueOf(dto.getRol()));
+
+        if (dto.getEmpresaId() != null) {
+            usuario.setEmpresa(empresaService.obtenerEntidad(dto.getEmpresaId()));
+        }
+
+        UsuarioDTO usuarioDTO = toDTO(usuarioRepository.save(usuario));
+
+        Map<String, Object> resultado = new HashMap<>();
+        resultado.put("usuario", usuarioDTO);
+        resultado.put("contrasenaTemp", contrasenaGenerada);
+        return resultado;
+    }
+
+    private String generarContrasenaAleatoria() {
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$";
+        StringBuilder sb = new StringBuilder();
+        Random random = new Random();
+        for (int i = 0; i < 12; i++) {
+            sb.append(chars.charAt(random.nextInt(chars.length())));
+        }
+        return sb.toString();
     }
 }
