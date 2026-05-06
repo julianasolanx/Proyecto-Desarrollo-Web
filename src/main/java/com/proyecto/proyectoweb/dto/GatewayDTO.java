@@ -8,4 +8,6 @@ public class GatewayDTO {
     private String nombre;
     private String tipo;
     private Long procesoId;
+    private Double posicionX;
+    private Double posicionY;
 }

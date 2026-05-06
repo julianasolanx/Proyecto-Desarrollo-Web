@@ -3,6 +3,7 @@ package com.proyecto.proyectoweb.entity;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -37,6 +38,11 @@ public class Gateway {
     @ManyToOne
     @JoinColumn(name = "proceso_id", nullable = false)
     private Proceso proceso;
+
+    @Column(name = "posicion_x")
+    private Double posicionX;
+    @Column(name = "posicion_y")
+    private Double posicionY;
 
     public enum TipoGateway {
         EXCLUSIVO, PARALELO, INCLUSIVO

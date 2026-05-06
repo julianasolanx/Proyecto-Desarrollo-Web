@@ -3,6 +3,7 @@ package com.proyecto.proyectoweb.entity;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -42,6 +43,11 @@ public class Actividad {
     @ManyToOne
     @JoinColumn(name = "rol_responsable_id")
     private RolProceso rolResponsable;
+
+    @Column(name = "posicion_x")
+    private Double posicionX;
+    @Column(name = "posicion_y")
+    private Double posicionY;
 
     public enum TipoActividad {
         TAREA, SUBPROCESO, EVENTO_INICIO, EVENTO_FIN
