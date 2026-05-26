@@ -27,18 +27,22 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @SQLRestriction("status = '0'")
-@SQLDelete(sql = "UPDATE actividad SET status = 1 WHERE id=?")
-public class Actividad {
+@SQLDelete(sql = "UPDATE mensaje_proceso SET status = 1 WHERE id=?")
+public class MensajeProceso {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String nombre;
-    private String descripcion;
 
     @Enumerated(EnumType.STRING)
-    private TipoActividad tipo;
+    private TipoMensaje tipo;
+
+    @Column(columnDefinition = "TEXT")
+    private String payloadTemplate;
+
+    private String businessKey;
 
     private Integer status = 0;
 
@@ -47,23 +51,16 @@ public class Actividad {
     private Proceso proceso;
 
     @ManyToOne
-    @JoinColumn(name = "rol_responsable_id")
-    private RolProceso rolResponsable;
+    @JoinColumn(name = "actividad_id")
+    private Actividad actividad;
 
-    @ManyToOne
-    @JoinColumn(name = "lane_id")
-    private Lane lane;
+    @OneToMany(mappedBy = "mensaje", cascade = CascadeType.ALL)
+    private List<EventoMensaje> eventos;
 
-    @Column(name = "posicion_x")
-    private Double posicionX;
+    @OneToMany(mappedBy = "mensaje", cascade = CascadeType.ALL)
+    private List<ReglaCorrelacion> reglasCorrelacion;
 
-    @Column(name = "posicion_y")
-    private Double posicionY;
-
-    @OneToMany(mappedBy = "actividad", cascade = CascadeType.ALL)
-    private List<MensajeProceso> mensajes;
-
-    public enum TipoActividad {
-        TAREA, SUBPROCESO, EVENTO_INICIO, EVENTO_FIN, MESSAGE_THROW, MESSAGE_CATCH
+    public enum TipoMensaje {
+        THROW, CATCH
     }
 }

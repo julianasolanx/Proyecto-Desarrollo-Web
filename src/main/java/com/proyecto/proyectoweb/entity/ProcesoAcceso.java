@@ -22,32 +22,27 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @SQLRestriction("status = '0'")
-@SQLDelete(sql = "UPDATE usuario SET status = 1 WHERE id=?")
-public class Usuario {
+@SQLDelete(sql = "UPDATE proceso_acceso SET status = 1 WHERE id=?")
+public class ProcesoAcceso {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String nombre;
-    private String correo;
-    private String contrasena;
+    @ManyToOne
+    @JoinColumn(name = "proceso_id", nullable = false)
+    private Proceso proceso;
+
+    @ManyToOne
+    @JoinColumn(name = "empresa_id", nullable = false)
+    private Empresa empresa;
 
     @Enumerated(EnumType.STRING)
-    private RolUsuario rol;
+    private TipoAcceso tipoAcceso;
 
     private Integer status = 0;
 
-    @ManyToOne
-    @JoinColumn(name = "empresa_id", nullable = true)
-    private Empresa empresa;
-
-    /** Rol dentro del pool de la empresa — define permisos granulares (HU-24) */
-    @ManyToOne
-    @JoinColumn(name = "rol_proceso_id", nullable = true)
-    private RolProceso rolProceso;
-
-    public enum RolUsuario {
-        ADMINISTRADOR, EDITOR, SOLO_LECTURA
+    public enum TipoAcceso {
+        LECTURA, EDICION
     }
 }

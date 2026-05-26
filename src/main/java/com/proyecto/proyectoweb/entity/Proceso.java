@@ -6,6 +6,7 @@ import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -36,13 +37,22 @@ public class Proceso {
     private String nombre;
     private String descripcion;
     private String categoria;
+
     @Enumerated(EnumType.STRING)
     private EstadoProceso estado;
+
     private Integer status = 0;
+
+    @Column(name = "es_compartido")
+    private Boolean esCompartido = false;
 
     @ManyToOne
     @JoinColumn(name = "empresa_id", nullable = false)
     private Empresa empresa;
+
+    @ManyToOne(fetch = jakarta.persistence.FetchType.LAZY)
+    @JoinColumn(name = "pool_id")
+    private Pool pool;
 
     @OneToMany(mappedBy = "proceso", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private List<Actividad> actividades;
@@ -52,6 +62,12 @@ public class Proceso {
 
     @OneToMany(mappedBy = "proceso", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private List<Arco> arcos;
+
+    @OneToMany(mappedBy = "proceso", cascade = CascadeType.ALL)
+    private List<ProcesoAcceso> accesos;
+
+    @OneToMany(mappedBy = "proceso", cascade = CascadeType.ALL)
+    private List<MensajeProceso> mensajes;
 
     public enum EstadoProceso {
         BORRADOR, PUBLICADO, INACTIVO

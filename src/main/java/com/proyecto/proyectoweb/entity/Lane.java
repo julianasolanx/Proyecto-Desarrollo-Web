@@ -10,8 +10,9 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -23,27 +24,21 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @SQLRestriction("status = '0'")
-@SQLDelete(sql = "UPDATE empresa SET status = 1 WHERE id=?")
-public class Empresa {
+@SQLDelete(sql = "UPDATE lane SET status = 1 WHERE id=?")
+public class Lane {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String nombre;
-    private String nit;
-    private String correoContacto;
+    private String descripcion;
     private Integer status = 0;
 
-    @OneToMany(mappedBy = "empresa", cascade = CascadeType.ALL)
-    private List<Usuario> usuarios;
-
-    @OneToMany(mappedBy = "empresa", cascade = CascadeType.ALL)
-    private List<Proceso> procesos;
-
-    @OneToMany(mappedBy = "empresa", cascade = CascadeType.ALL)
-    private List<RolProceso> roles;
-
-    @OneToOne(mappedBy = "empresa", cascade = CascadeType.ALL)
+    @ManyToOne
+    @JoinColumn(name = "pool_id", nullable = false)
     private Pool pool;
+
+    @OneToMany(mappedBy = "lane", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    private List<Actividad> actividades;
 }
