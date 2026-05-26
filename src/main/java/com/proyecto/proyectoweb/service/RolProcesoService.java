@@ -17,15 +17,18 @@ public class RolProcesoService {
     private final RolProcesoRepository rolProcesoRepository;
     private final EmpresaService empresaService;
     private final ActividadService actividadService;
+    private final UsuarioService usuarioService;
     private final ModelMapper modelMapper;
 
     public RolProcesoService(RolProcesoRepository rolProcesoRepository,
                              EmpresaService empresaService,
                              @Lazy ActividadService actividadService,
+                             UsuarioService usuarioService,
                              ModelMapper modelMapper) {
         this.rolProcesoRepository = rolProcesoRepository;
         this.empresaService = empresaService;
         this.actividadService = actividadService;
+        this.usuarioService = usuarioService;
         this.modelMapper = modelMapper;
     }
 
@@ -54,7 +57,6 @@ public class RolProcesoService {
     public RolProcesoDTO crearRol(RolProcesoDTO dto) {
         RolProceso rol = modelMapper.map(dto, RolProceso.class);
         rol.setEmpresa(empresaService.obtenerEntidad(dto.getEmpresaId()));
-
         return toDTO(rolProcesoRepository.save(rol));
     }
 
@@ -79,7 +81,12 @@ public class RolProcesoService {
             throw new EntityNotFoundException("Rol no encontrado");
         }
         if (actividadService.existePorRolResponsable(id)) {
-            throw new IllegalStateException("No se puede eliminar el rol porque está asignado a una o más actividades");
+            throw new IllegalStateException("No se puede eliminar el rol porque está asignado a actividades. Reasigne primero.");
+        }
+        long usuariosConRol = usuarioService.contarPorRolProceso(id);
+        if (usuariosConRol > 0) {
+            throw new IllegalStateException("No se puede eliminar el rol porque hay " + usuariosConRol +
+                    " usuario(s) asignado(s). Reasigne primero.");
         }
         rolProcesoRepository.deleteById(id);
     }

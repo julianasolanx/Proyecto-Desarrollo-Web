@@ -22,13 +22,16 @@ public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
     private final EmpresaService empresaService;
+    private final RolProcesoService rolProcesoService;
     private final ModelMapper modelMapper;
 
     public UsuarioService(UsuarioRepository usuarioRepository,
                           @Lazy EmpresaService empresaService,
+                          @Lazy RolProcesoService rolProcesoService,
                           ModelMapper modelMapper) {
         this.usuarioRepository = usuarioRepository;
         this.empresaService = empresaService;
+        this.rolProcesoService = rolProcesoService;
         this.modelMapper = modelMapper;
     }
 
@@ -68,10 +71,9 @@ public class UsuarioService {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
 
-        dto.setId(id);
-        modelMapper.map(dto, usuario);
-
-        // empresaId removido del DTO; la empresa no se modifica al actualizar usuario
+        if (dto.getNombre() != null) usuario.setNombre(dto.getNombre());
+        if (dto.getCorreo() != null) usuario.setCorreo(dto.getCorreo());
+        if (dto.getRol() != null) usuario.setRol(Usuario.RolUsuario.valueOf(dto.getRol()));
 
         return toDTO(usuarioRepository.save(usuario));
     }
@@ -100,11 +102,27 @@ public class UsuarioService {
                 .orElseThrow(() -> new EntityNotFoundException("Credenciales incorrectas")));
     }
 
+    @Transactional(readOnly = true)
+    public long contarPorRolProceso(Long rolProcesoId) {
+        return usuarioRepository.countByRolProcesoId(rolProcesoId);
+    }
+
+    @Transactional
+    public UsuarioDTO asignarRolProceso(Long usuarioId, Long rolProcesoId) {
+        Usuario usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
+        usuario.setRolProceso(rolProcesoId != null ? rolProcesoService.obtenerEntidad(rolProcesoId) : null);
+        return toDTO(usuarioRepository.save(usuario));
+    }
+
     private UsuarioDTO toDTO(Usuario usuario) {
-        UsuarioDTO dto = modelMapper.map(usuario, UsuarioDTO.class);
-        if (usuario.getEmpresa() != null) {
-            dto.setEmpresaId(usuario.getEmpresa().getId());
-        }
+        UsuarioDTO dto = new UsuarioDTO();
+        dto.setId(usuario.getId());
+        dto.setNombre(usuario.getNombre());
+        dto.setCorreo(usuario.getCorreo());
+        dto.setRol(usuario.getRol() != null ? usuario.getRol().name() : null);
+        if (usuario.getEmpresa() != null) dto.setEmpresaId(usuario.getEmpresa().getId());
+        if (usuario.getRolProceso() != null) dto.setRolProcesoId(usuario.getRolProceso().getId());
         return dto;
     }
 
