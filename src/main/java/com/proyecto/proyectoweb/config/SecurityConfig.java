@@ -1,37 +1,45 @@
-package com.proyecto.proyectoweb.config;
+package com.javeriana.auth_server.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.beans.factory.annotation.Autowired; // Importante para inyectar tu filtro
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+// Asegúrate de importar tu clase JwtAuthenticationFilter (o como se llame en tu proyecto)
+import com.proyecto.proyectoweb.config.JwtAuthenticationFilter; 
+
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity  // habilita @PreAuthorize
 public class SecurityConfig {
 
-    private final JwtAuthenticationFilter jwtFilter;
-
-    public SecurityConfig(JwtAuthenticationFilter jwtFilter) {
-        this.jwtFilter = jwtFilter;
-    }
+    // 1. Inyectas el filtro de JWT que solucionamos en los pasos anteriores
+    @Autowired
+    private JwtAuthenticationFilter jwtFilter; 
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http
-                .csrf(csrf -> csrf.disable())
+                
+                .csrf(csrf -> csrf.disable())           
+                
+               
                 .sessionManagement(sm ->
-                    sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                    sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) 
+               
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/public/**").permitAll()
+                        
+                        .requestMatchers("/auth/**").permitAll()  
+                        
                         .anyRequest().authenticated()
                 )
-                // El filtro JWT se ejecuta ANTES del filtro de auth por defecto
+                
+               
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+                
                 .build();
     }
 }
