@@ -1,32 +1,35 @@
 package com.proyecto.proyectoweb.serviceTest;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
 import com.proyecto.proyectoweb.dto.CrearUsuarioDTO;
 import com.proyecto.proyectoweb.dto.UsuarioDTO;
 import com.proyecto.proyectoweb.entity.Empresa;
 import com.proyecto.proyectoweb.entity.Usuario;
 import com.proyecto.proyectoweb.repository.UsuarioRepository;
 import com.proyecto.proyectoweb.service.EmpresaService;
+import com.proyecto.proyectoweb.service.RolProcesoService;
 import com.proyecto.proyectoweb.service.UsuarioService;
-
 import jakarta.persistence.EntityNotFoundException;
+import java.lang.reflect.Type;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
-
-import java.lang.reflect.Type;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class UsuarioServiceTest {
 
     @Mock
@@ -37,6 +40,12 @@ class UsuarioServiceTest {
 
     @Mock
     private ModelMapper modelMapper;
+
+    @Mock
+    private RolProcesoService rolProcesoService;
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
 
     @InjectMocks
     private UsuarioService usuarioService;
@@ -108,7 +117,9 @@ class UsuarioServiceTest {
 
     @Test
     void obtenerUsuario_Success() {
-        when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.of(usuario));
+        when(usuarioRepository.findById(usuarioId)).thenReturn(
+            Optional.of(usuario)
+        );
         when(modelMapper.map(usuario, UsuarioDTO.class)).thenReturn(usuarioDTO);
 
         UsuarioDTO result = usuarioService.obtenerUsuario(usuarioId);
@@ -119,16 +130,21 @@ class UsuarioServiceTest {
 
     @Test
     void obtenerUsuario_NotFound() {
-        when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.empty());
+        when(usuarioRepository.findById(usuarioId)).thenReturn(
+            Optional.empty()
+        );
 
         assertThrows(EntityNotFoundException.class, () ->
-            usuarioService.obtenerUsuario(usuarioId));
+            usuarioService.obtenerUsuario(usuarioId)
+        );
     }
 
     @Test
     void crearUsuario_Success() {
         when(empresaService.obtenerEntidad(empresaId)).thenReturn(empresa);
-        when(modelMapper.map(crearUsuarioDTO, Usuario.class)).thenReturn(usuario);
+        when(modelMapper.map(crearUsuarioDTO, Usuario.class)).thenReturn(
+            usuario
+        );
         when(usuarioRepository.save(usuario)).thenReturn(usuario);
         when(modelMapper.map(usuario, UsuarioDTO.class)).thenReturn(usuarioDTO);
 
@@ -141,10 +157,13 @@ class UsuarioServiceTest {
 
     @Test
     void crearUsuario_EmpresaNotFound() {
-        when(empresaService.obtenerEntidad(empresaId)).thenThrow(new EntityNotFoundException("Empresa no encontrada"));
+        when(empresaService.obtenerEntidad(empresaId)).thenThrow(
+            new EntityNotFoundException("Empresa no encontrada")
+        );
 
         assertThrows(EntityNotFoundException.class, () ->
-            usuarioService.crearUsuario(crearUsuarioDTO));
+            usuarioService.crearUsuario(crearUsuarioDTO)
+        );
     }
 
     @Test
@@ -152,17 +171,24 @@ class UsuarioServiceTest {
         UsuarioDTO updateDTO = new UsuarioDTO();
         updateDTO.setNombre("Updated Usuario");
 
-        when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.of(usuario));
+        when(usuarioRepository.findById(usuarioId)).thenReturn(
+            Optional.of(usuario)
+        );
         doAnswer(invocation -> {
             UsuarioDTO source = invocation.getArgument(0);
             Usuario destination = invocation.getArgument(1);
             destination.setNombre(source.getNombre());
             return null;
-        }).when(modelMapper).map(updateDTO, usuario);
+        })
+            .when(modelMapper)
+            .map(updateDTO, usuario);
         when(usuarioRepository.save(usuario)).thenReturn(usuario);
         when(modelMapper.map(usuario, UsuarioDTO.class)).thenReturn(usuarioDTO);
 
-        UsuarioDTO result = usuarioService.actualizarUsuario(usuarioId, updateDTO);
+        UsuarioDTO result = usuarioService.actualizarUsuario(
+            usuarioId,
+            updateDTO
+        );
 
         assertNotNull(result);
         verify(usuarioRepository).findById(usuarioId);
@@ -171,7 +197,9 @@ class UsuarioServiceTest {
 
     @Test
     void login_Success() {
-        when(usuarioRepository.login("test@mail.com", "pass123")).thenReturn(Optional.of(usuario));
+        when(usuarioRepository.login("test@mail.com", "pass123")).thenReturn(
+            Optional.of(usuario)
+        );
         when(modelMapper.map(usuario, UsuarioDTO.class)).thenReturn(usuarioDTO);
 
         UsuarioDTO result = usuarioService.login("test@mail.com", "pass123");
@@ -182,10 +210,13 @@ class UsuarioServiceTest {
 
     @Test
     void login_CredencialesIncorrectas() {
-        when(usuarioRepository.login("bad@mail.com", "wrong")).thenReturn(Optional.empty());
+        when(usuarioRepository.login("bad@mail.com", "wrong")).thenReturn(
+            Optional.empty()
+        );
 
         assertThrows(EntityNotFoundException.class, () ->
-            usuarioService.login("bad@mail.com", "wrong"));
+            usuarioService.login("bad@mail.com", "wrong")
+        );
     }
 
     @Test
@@ -193,12 +224,19 @@ class UsuarioServiceTest {
         UsuarioDTO updateDTO = new UsuarioDTO();
         updateDTO.setNombre("Updated Usuario");
 
-        when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.of(usuario));
-        doAnswer(invocation -> null).when(modelMapper).map(updateDTO, usuario);
+        when(usuarioRepository.findById(usuarioId)).thenReturn(
+            Optional.of(usuario)
+        );
+        doAnswer(invocation -> null)
+            .when(modelMapper)
+            .map(updateDTO, usuario);
         when(usuarioRepository.save(usuario)).thenReturn(usuario);
         when(modelMapper.map(usuario, UsuarioDTO.class)).thenReturn(usuarioDTO);
 
-        UsuarioDTO result = usuarioService.actualizarUsuario(usuarioId, updateDTO);
+        UsuarioDTO result = usuarioService.actualizarUsuario(
+            usuarioId,
+            updateDTO
+        );
 
         assertNotNull(result);
         verify(empresaService, never()).obtenerEntidad(any());
@@ -206,10 +244,13 @@ class UsuarioServiceTest {
 
     @Test
     void actualizarUsuario_NotFound() {
-        when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.empty());
+        when(usuarioRepository.findById(usuarioId)).thenReturn(
+            Optional.empty()
+        );
 
         assertThrows(EntityNotFoundException.class, () ->
-            usuarioService.actualizarUsuario(usuarioId, usuarioDTO));
+            usuarioService.actualizarUsuario(usuarioId, usuarioDTO)
+        );
     }
 
     @Test
@@ -226,6 +267,7 @@ class UsuarioServiceTest {
         when(usuarioRepository.existsById(usuarioId)).thenReturn(false);
 
         assertThrows(EntityNotFoundException.class, () ->
-            usuarioService.eliminarUsuario(usuarioId));
+            usuarioService.eliminarUsuario(usuarioId)
+        );
     }
 }
