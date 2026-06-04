@@ -13,6 +13,8 @@ public interface GatewayRepository extends JpaRepository<Gateway, Long> {
     @Query("SELECT g FROM Gateway g WHERE g.proceso.id = :procesoId")
     List<Gateway> findByProcesoId(@Param("procesoId") Long procesoId);
 
+    boolean existsByProcesoId(Long procesoId);
+
     @Modifying
     @Transactional
     @Query("UPDATE Gateway g SET g.tipo = :tipo WHERE g.id = :id")

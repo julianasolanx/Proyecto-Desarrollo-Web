@@ -66,11 +66,15 @@ public class ActividadService {
     }
 
     public boolean existenPorProceso(Long procesoId) {
-        return !actividadRepository.findByProcesoId(procesoId).isEmpty();
+        return actividadRepository.existsByProcesoId(procesoId);
     }
 
     public boolean existePorRolResponsable(Long rolId) {
         return actividadRepository.existsByRolResponsableId(rolId);
+    }
+
+    public boolean existePorLane(Long laneId) {
+        return actividadRepository.existsByLaneId(laneId);
     }
 
     @Transactional

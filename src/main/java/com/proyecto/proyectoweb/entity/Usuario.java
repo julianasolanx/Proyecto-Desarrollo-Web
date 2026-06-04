@@ -32,13 +32,20 @@ public class Usuario {
     private String nombre;
     private String correo;
     private String contrasena;
+
     @Enumerated(EnumType.STRING)
     private RolUsuario rol;
+
     private Integer status = 0;
 
     @ManyToOne
     @JoinColumn(name = "empresa_id", nullable = true)
     private Empresa empresa;
+
+    /** Rol dentro del pool de la empresa — define permisos granulares (HU-24) */
+    @ManyToOne
+    @JoinColumn(name = "rol_proceso_id", nullable = true)
+    private RolProceso rolProceso;
 
     public enum RolUsuario {
         ADMINISTRADOR, EDITOR, SOLO_LECTURA

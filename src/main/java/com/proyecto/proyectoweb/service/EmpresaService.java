@@ -6,6 +6,7 @@ import com.proyecto.proyectoweb.repository.EmpresaRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.lang.reflect.Type;
@@ -16,13 +17,16 @@ public class EmpresaService {
 
     private final EmpresaRepository empresaRepository;
     private final UsuarioService usuarioService;
+    private final PoolService poolService;
     private final ModelMapper modelMapper;
 
     public EmpresaService(EmpresaRepository empresaRepository,
                           UsuarioService usuarioService,
+                          @Lazy PoolService poolService,
                           ModelMapper modelMapper) {
         this.empresaRepository = empresaRepository;
         this.usuarioService = usuarioService;
+        this.poolService = poolService;
         this.modelMapper = modelMapper;
     }
 
@@ -51,6 +55,7 @@ public class EmpresaService {
         Empresa saved = empresaRepository.save(empresa);
 
         usuarioService.registrarAdmin(saved);
+        poolService.crearPoolParaEmpresa(saved);
 
         return modelMapper.map(saved, EmpresaDTO.class);
     }

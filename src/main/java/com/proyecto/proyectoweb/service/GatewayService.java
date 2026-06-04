@@ -58,7 +58,7 @@ public class GatewayService {
     }
 
     public boolean existenPorProceso(Long procesoId) {
-        return !gatewayRepository.findByProcesoId(procesoId).isEmpty();
+        return gatewayRepository.existsByProcesoId(procesoId);
     }
 
     @Transactional

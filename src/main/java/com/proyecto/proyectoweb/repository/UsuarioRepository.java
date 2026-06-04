@@ -27,4 +27,6 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     @Transactional
     @Query("UPDATE Usuario u SET u.rol = :rol WHERE u.id = :id")
     int updateRol(@Param("id") Long id, @Param("rol") String rol);
+
+    long countByRolProcesoId(Long rolProcesoId);
 }

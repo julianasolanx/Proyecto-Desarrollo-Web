@@ -42,16 +42,22 @@ public class HistorialCambioService {
     public void registrarSiCambio(String entidad, Long entidadId, String campo,
                                    String valorAnterior, String valorNuevo, Proceso proceso) {
         if (!Objects.equals(valorAnterior, valorNuevo)) {
-            HistorialCambio historial = new HistorialCambio();
-            historial.setEntidad(entidad);
-            historial.setEntidadId(entidadId);
-            historial.setCampo(campo);
-            historial.setValorAnterior(valorAnterior);
-            historial.setValorNuevo(valorNuevo);
-            historial.setFechaCambio(LocalDateTime.now());
-            historial.setProceso(proceso);
-            historialCambioRepository.save(historial);
+            registrarCambio(entidad, entidadId, campo, valorAnterior, valorNuevo, proceso);
         }
+    }
+
+    @Transactional
+    public void registrarCambio(String entidad, Long entidadId, String campo,
+                                 String valorAnterior, String valorNuevo, Proceso proceso) {
+        HistorialCambio historial = new HistorialCambio();
+        historial.setEntidad(entidad);
+        historial.setEntidadId(entidadId);
+        historial.setCampo(campo);
+        historial.setValorAnterior(valorAnterior);
+        historial.setValorNuevo(valorNuevo);
+        historial.setFechaCambio(LocalDateTime.now());
+        historial.setProceso(proceso);
+        historialCambioRepository.save(historial);
     }
 
     private HistorialCambioDTO toDTO(HistorialCambio h) {

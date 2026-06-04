@@ -1,11 +1,18 @@
 package com.proyecto.proyectoweb.entity;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -38,6 +45,24 @@ public class RolProceso {
     @JoinColumn(name = "empresa_id", nullable = false)
     private Empresa empresa;
 
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "rol_permiso", joinColumns = @JoinColumn(name = "rol_proceso_id"))
+    @Enumerated(EnumType.STRING)
+    private Set<Permiso> permisos = new HashSet<>();
+
     @OneToMany(mappedBy = "rolResponsable")
     private List<Actividad> actividades;
+
+    @OneToMany(mappedBy = "rolProceso")
+    private List<Usuario> usuarios;
+
+    public enum Permiso {
+        CREAR_PROCESO,
+        EDITAR_PROCESO,
+        ELIMINAR_PROCESO,
+        PUBLICAR_PROCESO,
+        GESTIONAR_ROLES,
+        GESTIONAR_USUARIOS,
+        VER_PROCESOS_COMPARTIDOS
+    }
 }

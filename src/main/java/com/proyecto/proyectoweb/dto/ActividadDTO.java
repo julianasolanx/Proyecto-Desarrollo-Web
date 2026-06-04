@@ -10,6 +10,7 @@ public class ActividadDTO {
     private String tipo;
     private Long procesoId;
     private Long rolResponsableId;
+    private Long laneId;
     private Double posicionX;
     private Double posicionY;
 }

@@ -10,4 +10,6 @@ public class ProcesoDTO {
     private String categoria;
     private String estado;
     private Long empresaId;
+    private Long poolId;
+    private Boolean esCompartido;
 }

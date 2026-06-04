@@ -75,17 +75,15 @@ public class ArcoService {
     }
 
     public boolean existenArcosPorActividad(Long actividadId) {
-        return !arcoRepository.findByActividadOrigenId(actividadId).isEmpty()
-                || !arcoRepository.findByActividadDestinoId(actividadId).isEmpty();
+        return arcoRepository.existsByActividadOrigenIdOrActividadDestinoId(actividadId, actividadId);
     }
 
     public boolean existenArcosPorGateway(Long gatewayId) {
-        return !arcoRepository.findByGatewayOrigenId(gatewayId).isEmpty()
-                || !arcoRepository.findByGatewayDestinoId(gatewayId).isEmpty();
+        return arcoRepository.existsByGatewayOrigenIdOrGatewayDestinoId(gatewayId, gatewayId);
     }
 
     public boolean existenArcosPorProceso(Long procesoId) {
-        return !arcoRepository.findByProcesoId(procesoId).isEmpty();
+        return arcoRepository.existsByProcesoId(procesoId);
     }
 
     // -------------------------------------------------------

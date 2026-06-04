@@ -3,6 +3,7 @@ package com.proyecto.proyectoweb.dto;
 import lombok.Data;
 
 import java.util.List;
+import java.util.Set;
 
 @Data
 public class RolProcesoDTO {
@@ -11,4 +12,5 @@ public class RolProcesoDTO {
     private String descripcion;
     private Long empresaId;
     private List<Long> actividadIds;
+    private Set<String> permisos;
 }

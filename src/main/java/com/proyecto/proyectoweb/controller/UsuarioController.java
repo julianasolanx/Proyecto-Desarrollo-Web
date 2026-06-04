@@ -64,6 +64,12 @@ public class UsuarioController {
         return ResponseEntity.noContent().build();
     }
 
+    @PutMapping("/{id}/rol-proceso")
+    public ResponseEntity<UsuarioDTO> asignarRolProceso(@PathVariable Long id,
+                                                         @RequestBody Map<String, Long> body) {
+        return ResponseEntity.ok(usuarioService.asignarRolProceso(id, body.get("rolProcesoId")));
+    }
+
     @PostMapping("/enviar-invitacion")
     public ResponseEntity<String> enviarInvitacion(@RequestBody EmailRequestDTO dto) {
         emailService.enviarCorreo(dto.getTo(), dto.getSubject(), dto.getMessage());

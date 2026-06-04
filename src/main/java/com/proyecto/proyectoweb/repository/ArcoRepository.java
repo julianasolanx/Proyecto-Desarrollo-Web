@@ -18,6 +18,10 @@ public interface ArcoRepository extends JpaRepository<Arco, Long> {
     List<Arco> findByGatewayOrigenId(Long gatewayId);
     List<Arco> findByGatewayDestinoId(Long gatewayId);
 
+    boolean existsByProcesoId(Long procesoId);
+    boolean existsByActividadOrigenIdOrActividadDestinoId(Long origenId, Long destinoId);
+    boolean existsByGatewayOrigenIdOrGatewayDestinoId(Long origenId, Long destinoId);
+
     @Modifying
     @Transactional
     @Query("UPDATE Arco a SET a.condicion = :condicion WHERE a.id = :id")

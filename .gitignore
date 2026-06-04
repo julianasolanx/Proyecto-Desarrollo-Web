@@ -31,3 +31,5 @@ build/
 
 ### VS Code ###
 .vscode/
+# CocoIndex Code (ccc)
+/.cocoindex_code/

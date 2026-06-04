@@ -19,4 +19,8 @@ public interface ActividadRepository extends JpaRepository<Actividad, Long> {
     int updateTipo(@Param("id") Long id, @Param("tipo") String tipo);
 
     boolean existsByRolResponsableId(Long rolId);
+
+    boolean existsByProcesoId(Long procesoId);
+
+    boolean existsByLaneId(Long laneId);
 }

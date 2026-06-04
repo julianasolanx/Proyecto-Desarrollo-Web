@@ -9,4 +9,5 @@ public class UsuarioDTO {
     private String correo;
     private String rol;
     private Long empresaId;
+    private Long rolProcesoId;
 }
