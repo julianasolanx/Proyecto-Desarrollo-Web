@@ -1,11 +1,10 @@
 package com.proyecto.proyectoweb.controller;
 
+import java.util.Map;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.Map;
 
 @RestController
 public class ResourceController {
@@ -20,9 +19,13 @@ public class ResourceController {
     @GetMapping("/api/profile")
     public Map<String, Object> profile(Authentication auth) {
         return Map.of(
-                "user", auth.getName(),
-                "authorities", auth.getAuthorities(),
-                "message", "Token válido, acceso concedido");
+            "user",
+            auth.getName(),
+            "authorities",
+            auth.getAuthorities(),
+            "message",
+            "Token válido, acceso concedido"
+        );
     }
 
     // Protegido — solo ROLE_ADMIN
@@ -30,7 +33,10 @@ public class ResourceController {
     @GetMapping("/api/admin")
     public Map<String, String> admin(Authentication auth) {
         return Map.of(
-                "user", auth.getName(),
-                "message", "Bienvenido, administrador");
+            "user",
+            auth.getName(),
+            "message",
+            "Bienvenido, administrador"
+        );
     }
 }
